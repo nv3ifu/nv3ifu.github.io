@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LocalBP 分支预测器动画演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #eee;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #00d4ff;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+        }
+
+        /* 代码区域 */
+        .code-section {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .code-section h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .code-line {
+            padding: 5px 10px;
+            border-radius: 4px;
+            transition: all 0.3s;
+        }
+
+        .code-line.highlight {
+            background: #388bfd33;
+            border-left: 3px solid #58a6ff;
+        }
+
+        .code-line .line-num {
+            color: #6e7681;
+            margin-right: 15px;
+            user-select: none;
+        }
+
+        .code-line .keyword {
+            color: #ff7b72;
+        }
+
+        .code-line .type {
+            color: #79c0ff;
+        }
+
+        .code-line .number {
+            color: #a5d6ff;
+        }
+
+        .code-line .comment {
+            color: #8b949e;
+        }
+
+        .code-line .var {
+            color: #ffa657;
+        }
+
+        /* 主要展示区 */
+        .main-display {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        /* PC 和索引计算 */
+        .calc-section {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .calc-section h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .calc-row {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            font-size: 16px;
+        }
+
+        .calc-label {
+            width: 120px;
+            color: #8b949e;
+        }
+
+        .calc-value {
+            background: #21262d;
+            padding: 8px 15px;
+            border-radius: 5px;
+            font-family: monospace;
+            color: #7ee787;
+            min-width: 150px;
+        }
+
+        .calc-arrow {
+            color: #f0883e;
+            margin: 0 10px;
+            font-size: 20px;
+        }
+
+        /* 计数器表 */
+        .counter-table {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .counter-table h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .table-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .counter-cell {
+            width: 50px;
+            height: 50px;
+            background: #21262d;
+            border-radius: 5px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .counter-cell.active {
+            border-color: #f0883e;
+            background: #f0883e22;
+            transform: scale(1.1);
+            box-shadow: 0 0 20px #f0883e55;
+        }
+
+        .counter-cell .idx {
+            font-size: 10px;
+            color: #6e7681;
+        }
+
+        .counter-cell .val {
+            font-size: 18px;
+            font-weight: bold;
+            color: #7ee787;
+        }
+
+        /* 状态机 */
+        .state-machine {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .state-machine h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .states {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 20px 0;
+        }
+
+        .state {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            border: 3px solid #30363d;
+            background: #21262d;
+        }
+
+        .state.not-taken {
+            border-color: #f85149;
+        }
+
+        .state.taken {
+            border-color: #3fb950;
+        }
+
+        .state.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 30px currentColor;
+        }
+
+        .state.active.not-taken {
+            background: #f8514933;
+        }
+
+        .state.active.taken {
+            background: #3fb95033;
+        }
+
+        .state .state-val {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .state .state-name {
+            font-size: 10px;
+            margin-top: 5px;
+        }
+
+        .state-arrow {
+            color: #6e7681;
+            font-size: 24px;
+        }
+
+        /* 预测结果 */
+        .result-section {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .result-section h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .result-row {
+            display: flex;
+            gap: 30px;
+            margin: 15px 0;
+        }
+
+        .result-item {
+            flex: 1;
+            background: #21262d;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .result-item .label {
+            color: #8b949e;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .result-item .value {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .result-item .value.taken {
+            color: #3fb950;
+        }
+
+        .result-item .value.not-taken {
+            color: #f85149;
+        }
+
+        .result-item .value.correct {
+            color: #3fb950;
+        }
+
+        .result-item .value.wrong {
+            color: #f85149;
+        }
+
+        /* 历史记录 */
+        .history-section {
+            background: #0d1117;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #30363d;
+        }
+
+        .history-section h3 {
+            color: #58a6ff;
+            margin-bottom: 15px;
+        }
+
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th,
+        .history-table td {
+            padding: 10px;
+            text-align: center;
+            border-bottom: 1px solid #30363d;
+        }
+
+        .history-table th {
+            color: #8b949e;
+            font-weight: normal;
+        }
+
+        .history-table .correct {
+            color: #3fb950;
+        }
+
+        .history-table .wrong {
+            color: #f85149;
+        }
+
+        /* 控制按钮 */
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: #238636;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #2ea043;
+        }
+
+        .btn-secondary {
+            background: #21262d;
+            color: #c9d1d9;
+            border: 1px solid #30363d;
+        }
+
+        .btn-secondary:hover {
+            background: #30363d;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 统计 */
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-item .stat-value {
+            font-size: 36px;
+            font-weight: bold;
+            color: #58a6ff;
+        }
+
+        .stat-item .stat-label {
+            color: #8b949e;
+            font-size: 14px;
+        }
+
+        /* 说明文字 */
+        .explanation {
+            background: #161b22;
+            border-left: 4px solid #58a6ff;
+            padding: 15px 20px;
+            margin: 20px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .explanation p {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+
+        .explanation .highlight-text {
+            color: #f0883e;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔮 LocalBP 分支预测器动画演示</h1>
+        <p class="subtitle">gem5 中最简单的分支预测器 - 2-bit 饱和计数器</p>
+
+        <!-- 控制按钮 -->
+        <div class="controls">
+            <button class="btn btn-primary" id="nextBtn" onclick="nextStep()">▶ 下一步</button>
+            <button class="btn btn-secondary" id="autoBtn" onclick="toggleAuto()">⏩ 自动播放</button>
+            <button class="btn btn-secondary" onclick="reset()">🔄 重置</button>
+        </div>
+
+        <!-- 代码区域 -->
+        <div class="code-section">
+            <h3>📝 汇编代码 (x86-64)</h3>
+            <div class="code-line" id="code-0">
+                <span class="line-num">0x401000:</span>
+                <span class="keyword">xor</span> <span class="var">eax</span>, <span class="var">eax</span> <span
+                    class="comment">; sum = 0</span>
+            </div>
+            <div class="code-line" id="code-1">
+                <span class="line-num">0x401002:</span>
+                <span class="keyword">xor</span> <span class="var">ecx</span>, <span class="var">ecx</span> <span
+                    class="comment">; i = 0</span>
+            </div>
+            <div class="code-line" id="code-2">
+                <span class="line-num">0x401004:</span>
+                <span class="type">loop:</span>
+            </div>
+            <div class="code-line" id="code-3">
+                <span class="line-num">0x401004:</span>
+                <span class="keyword">add</span> <span class="var">eax</span>, <span class="var">ecx</span> <span
+                    class="comment">; sum += i</span>
+            </div>
+            <div class="code-line" id="code-4">
+                <span class="line-num">0x401006:</span>
+                <span class="keyword">inc</span> <span class="var">ecx</span> <span class="comment">; i++</span>
+            </div>
+            <div class="code-line" id="code-5">
+                <span class="line-num">0x401008:</span>
+                <span class="keyword">cmp</span> <span class="var">ecx</span>, <span class="number">4</span> <span
+                    class="comment">; compare i with 4</span>
+            </div>
+            <div class="code-line" id="code-6">
+                <span class="line-num">0x40100B:</span>
+                <span class="keyword">jl</span> <span class="var">loop</span> <span class="comment">; if (i &lt; 4) goto
+                    loop ← 分支指令!</span>
+            </div>
+            <div class="code-line" id="code-7">
+                <span class="line-num">0x40100D:</span>
+                <span class="keyword">ret</span> <span class="comment">; return</span>
+            </div>
+        </div>
+
+        <!-- 说明 -->
+        <div class="explanation" id="explanation">
+            <p>👋 欢迎！这个动画演示 LocalBP 如何预测一个简单循环的分支。</p>
+            <p>循环执行 4 次 (i=0,1,2,3)，前 4 次分支跳转 (Taken)，最后 1 次不跳转 (Not Taken) 退出循环。</p>
+            <p>计数器初始值为 <span class="highlight-text">0 (00)</span>，即"强不跳转"状态。</p>
+            <p>点击 <span class="highlight-text">"下一步"</span> 开始演示！</p>
+        </div>
+
+        <!-- 主要展示区 -->
+        <div class="main-display">
+            <!-- PC 和索引计算 -->
+            <div class="calc-section">
+                <h3>🔢 索引计算 (jl 指令)</h3>
+                <div class="calc-row">
+                    <span class="calc-label">PC 地址:</span>
+                    <span class="calc-value" id="pc-value">0x40100B</span>
+                </div>
+                <div class="calc-row">
+                    <span class="calc-label">右移 2 位:</span>
+                    <span class="calc-value" id="shift-value">0x100402</span>
+                </div>
+                <div class="calc-row">
+                    <span class="calc-label">& 0x3FF:</span>
+                    <span class="calc-value" id="index-value">2</span>
+                </div>
+                <div class="calc-row" style="margin-top: 20px;">
+                    <span class="calc-label">当前 i =</span>
+                    <span class="calc-value" id="i-value">-</span>
+                </div>
+            </div>
+
+            <!-- 计数器表 -->
+            <div class="counter-table">
+                <h3>📊 计数器表 localCtrs[]</h3>
+                <div class="table-container" id="counter-table">
+                    <!-- 动态生成 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 状态机 -->
+        <div class="state-machine">
+            <h3>🔄 2-bit 饱和计数器状态机</h3>
+            <div class="states">
+                <div class="state not-taken" id="state-0">
+                    <span class="state-val">00</span>
+                    <span class="state-name">强不跳</span>
+                </div>
+                <span class="state-arrow">⟷</span>
+                <div class="state not-taken" id="state-1">
+                    <span class="state-val">01</span>
+                    <span class="state-name">弱不跳</span>
+                </div>
+                <span class="state-arrow">⟷</span>
+                <div class="state taken" id="state-2">
+                    <span class="state-val">10</span>
+                    <span class="state-name">弱跳转</span>
+                </div>
+                <span class="state-arrow">⟷</span>
+                <div class="state taken" id="state-3">
+                    <span class="state-val">11</span>
+                    <span class="state-name">强跳转</span>
+                </div>
+            </div>
+            <p style="text-align: center; color: #8b949e; margin-top: 10px;">
+                ← Not Taken (减1) &nbsp;&nbsp;&nbsp;&nbsp; Taken (加1) →
+            </p>
+        </div>
+
+        <!-- 预测结果 -->
+        <div class="result-section">
+            <h3>📋 当前预测</h3>
+            <div class="result-row">
+                <div class="result-item">
+                    <div class="label">计数器值</div>
+                    <div class="value" id="counter-display">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">预测结果</div>
+                    <div class="value" id="prediction-display">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">实际结果</div>
+                    <div class="value" id="actual-display">-</div>
+                </div>
+                <div class="result-item">
+                    <div class="label">预测正确?</div>
+                    <div class="value" id="correct-display">-</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 历史记录 -->
+        <div class="history-section">
+            <h3>📜 预测历史</h3>
+            <table class="history-table">
+                <thead>
+                    <tr>
+                        <th>循环次数</th>
+                        <th>i 值</th>
+                        <th>计数器(前)</th>
+                        <th>预测</th>
+                        <th>实际</th>
+                        <th>结果</th>
+                        <th>计数器(后)</th>
+                    </tr>
+                </thead>
+                <tbody id="history-body">
+                </tbody>
+            </table>
+        </div>
+
+        <!-- 统计 -->
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="total-count">0</div>
+                <div class="stat-label">总预测次数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="correct-count">0</div>
+                <div class="stat-label">正确次数</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="accuracy">0%</div>
+                <div class="stat-label">准确率</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 状态
+        let currentStep = 0;
+        let counter = 0; // 初始值 00 (强不跳转) - gem5 默认初始化为 0
+        let totalPredictions = 0;
+        let correctPredictions = 0;
+        let autoPlay = false;
+        let autoTimer = null;
+
+        // 循环数据: [i值, 实际是否跳转]
+        const loopData = [
+            [0, true],   // i=0, taken
+            [1, true],   // i=1, taken
+            [2, true],   // i=2, taken
+            [3, true],   // i=3, taken
+            [4, false],  // i=4, not taken (退出)
+        ];
+
+        // 初始化计数器表
+        function initCounterTable() {
+            const table = document.getElementById('counter-table');
+            table.innerHTML = '';
+
+            // 显示 index 0-4 附近的计数器 (jl 指令映射到 index 2)
+            for (let i = 0; i <= 4; i++) {
+                const cell = document.createElement('div');
+                cell.className = 'counter-cell';
+                cell.id = `cell-${i}`;
+                cell.innerHTML = `
+                    <span class="idx">[${i}]</span>
+                    <span class="val">${i === 2 ? counter : 0}</span>
+                `;
+                table.appendChild(cell);
+            }
+        }
+
+        // 更新状态机高亮
+        function updateStateMachine(value) {
+            for (let i = 0; i <= 3; i++) {
+                document.getElementById(`state-${i}`).classList.remove('active');
+            }
+            document.getElementById(`state-${value}`).classList.add('active');
+        }
+
+        // 更新计数器表
+        function updateCounterTable() {
+            const cell = document.getElementById('cell-2');
+            cell.querySelector('.val').textContent = counter;
+        }
+
+        // 高亮代码行
+        function highlightCode(lineIndex) {
+            for (let i = 0; i <= 7; i++) {
+                const el = document.getElementById(`code-${i}`);
+                if (el) el.classList.remove('highlight');
+            }
+            if (lineIndex >= 0) {
+                const el = document.getElementById(`code-${lineIndex}`);
+                if (el) el.classList.add('highlight');
+            }
+        }
+
+        // 获取预测结果
+        function getPrediction(counterVal) {
+            return counterVal >= 2; // MSB = 1 则预测跳转
+        }
+
+        // 下一步
+        function nextStep() {
+            if (currentStep >= loopData.length * 2) {
+                // 完成
+                document.getElementById('explanation').innerHTML = `
+                    <p>🎉 <span class="highlight-text">演示完成！</span></p>
+                    <p>LocalBP 在这个循环中的表现：5 次预测，2 次正确，3 次错误，准确率 40%。</p>
+                    <p>前 2 次预测错误：计数器从 0 开始，需要"热身"才能学会这是个循环。</p>
+                    <p>最后 1 次预测错误：计数器已饱和到 3，预测"跳转"，但实际退出循环了。</p>
+                    <p>这是 LocalBP 的典型行为 —— 循环开始和结束时容易预测错误。</p>
+                `;
+                document.getElementById('nextBtn').disabled = true;
+                stopAuto();
+                return;
+            }
+
+            const dataIndex = Math.floor(currentStep / 2);
+            const [iVal, actualTaken] = loopData[dataIndex];
+            const isLookup = currentStep % 2 === 0;
+
+            if (isLookup) {
+                // 查表阶段 - 高亮 jl 指令 (第6行)
+                highlightCode(6);
+                document.getElementById('cell-2').classList.add('active');
+                document.getElementById('i-value').textContent = iVal;
+
+                const prediction = getPrediction(counter);
+                document.getElementById('counter-display').textContent = `${counter} (${counter.toString(2).padStart(2, '0')})`;
+                document.getElementById('prediction-display').textContent = prediction ? 'TAKEN' : 'NOT TAKEN';
+                document.getElementById('prediction-display').className = `value ${prediction ? 'taken' : 'not-taken'}`;
+                document.getElementById('actual-display').textContent = '-';
+                document.getElementById('correct-display').textContent = '-';
+
+                updateStateMachine(counter);
+
+                document.getElementById('explanation').innerHTML = `
+                    <p>🔍 <span class="highlight-text">第 ${dataIndex + 1} 次循环 (i=${iVal})</span> - 查表预测</p>
+                    <p>1. PC = 0x40100B (jl 指令)，计算索引 = 2</p>
+                    <p>2. 查表 localCtrs[2] = ${counter} (${counter.toString(2).padStart(2, '0')})</p>
+                    <p>3. MSB = ${counter >= 2 ? 1 : 0}，预测：<span class="highlight-text">${prediction ? '跳转 (Taken)' : '不跳转 (Not Taken)'}</span></p>
+                `;
+            } else {
+                // 更新阶段
+                const prediction = getPrediction(counter);
+                const isCorrect = prediction === actualTaken;
+                const oldCounter = counter;
+
+                // 更新计数器
+                if (actualTaken) {
+                    counter = Math.min(3, counter + 1);
+                } else {
+                    counter = Math.max(0, counter - 1);
+                }
+
+                document.getElementById('actual-display').textContent = actualTaken ? 'TAKEN' : 'NOT TAKEN';
+                document.getElementById('actual-display').className = `value ${actualTaken ? 'taken' : 'not-taken'}`;
+                document.getElementById('correct-display').textContent = isCorrect ? '✓ 正确' : '✗ 错误';
+                document.getElementById('correct-display').className = `value ${isCorrect ? 'correct' : 'wrong'}`;
+
+                updateCounterTable();
+                updateStateMachine(counter);
+
+                // 更新统计
+                totalPredictions++;
+                if (isCorrect) correctPredictions++;
+                document.getElementById('total-count').textContent = totalPredictions;
+                document.getElementById('correct-count').textContent = correctPredictions;
+                document.getElementById('accuracy').textContent = `${Math.round(correctPredictions / totalPredictions * 100)}%`;
+
+                // 添加历史记录
+                const historyBody = document.getElementById('history-body');
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${dataIndex + 1}</td>
+                    <td>${iVal}</td>
+                    <td>${oldCounter} (${oldCounter.toString(2).padStart(2, '0')})</td>
+                    <td class="${prediction ? 'correct' : 'wrong'}">${prediction ? 'Taken' : 'Not Taken'}</td>
+                    <td class="${actualTaken ? 'correct' : 'wrong'}">${actualTaken ? 'Taken' : 'Not Taken'}</td>
+                    <td class="${isCorrect ? 'correct' : 'wrong'}">${isCorrect ? '✓' : '✗'}</td>
+                    <td>${counter} (${counter.toString(2).padStart(2, '0')})</td>
+                `;
+                historyBody.appendChild(row);
+
+                document.getElementById('explanation').innerHTML = `
+                    <p>📝 <span class="highlight-text">第 ${dataIndex + 1} 次循环 (i=${iVal})</span> - 更新计数器</p>
+                    <p>实际结果：${actualTaken ? '跳转 (Taken)' : '不跳转 (Not Taken)'}</p>
+                    <p>预测${isCorrect ? '正确 ✓' : '错误 ✗'}！计数器 ${oldCounter} → ${counter}</p>
+                    ${!isCorrect ? '<p style="color: #f85149;">⚠️ 这是循环退出时的典型错误！</p>' : ''}
+                `;
+
+                document.getElementById('cell-2').classList.remove('active');
+            }
+
+            currentStep++;
+        }
+
+        // 自动播放
+        function toggleAuto() {
+            if (autoPlay) {
+                stopAuto();
+            } else {
+                autoPlay = true;
+                document.getElementById('autoBtn').textContent = '⏸ 暂停';
+                autoTimer = setInterval(() => {
+                    if (currentStep >= loopData.length * 2) {
+                        stopAuto();
+                    } else {
+                        nextStep();
+                    }
+                }, 1500);
+            }
+        }
+
+        function stopAuto() {
+            autoPlay = false;
+            document.getElementById('autoBtn').textContent = '⏩ 自动播放';
+            if (autoTimer) {
+                clearInterval(autoTimer);
+                autoTimer = null;
+            }
+        }
+
+        // 重置
+        function reset() {
+            stopAuto();
+            currentStep = 0;
+            counter = 0;  // 初始值 00 (强不跳转)
+            totalPredictions = 0;
+            correctPredictions = 0;
+
+            initCounterTable();
+            updateStateMachine(0);
+            highlightCode(-1);
+
+            document.getElementById('i-value').textContent = '-';
+            document.getElementById('counter-display').textContent = '-';
+            document.getElementById('prediction-display').textContent = '-';
+            document.getElementById('prediction-display').className = 'value';
+            document.getElementById('actual-display').textContent = '-';
+            document.getElementById('actual-display').className = 'value';
+            document.getElementById('correct-display').textContent = '-';
+            document.getElementById('correct-display').className = 'value';
+
+            document.getElementById('history-body').innerHTML = '';
+            document.getElementById('total-count').textContent = '0';
+            document.getElementById('correct-count').textContent = '0';
+            document.getElementById('accuracy').textContent = '0%';
+
+            document.getElementById('nextBtn').disabled = false;
+
+            document.getElementById('explanation').innerHTML = `
+                <p>👋 欢迎！这个动画演示 LocalBP 如何预测一个简单循环的分支。</p>
+                <p>循环执行 4 次 (i=0,1,2,3)，前 4 次分支跳转 (Taken)，最后 1 次不跳转 (Not Taken) 退出循环。</p>
+                <p>计数器初始值为 <span class="highlight-text">0 (00)</span>，即"强不跳转"状态。</p>
+                <p>点击 <span class="highlight-text">"下一步"</span> 开始演示！</p>
+            `;
+        }
+
+        // 初始化
+        initCounterTable();
+        updateStateMachine(0);
+    </script>
+</body>
+
+</html>
