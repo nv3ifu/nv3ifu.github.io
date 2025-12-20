@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <title>C++ new[] 完整流程图</title>
+    <style>
+        body {
+            font-family: 'Consolas', 'Monaco', monospace;
+            background: #fff;
+            margin: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .container {
+            display: flex;
+            justify-content: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>C++ new Test[n] 完整内存分配流程</h1>
+    <div class="container">
+        <svg width="1000" height="1400" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#333" />
+                </marker>
+                <marker id="arrow-green" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L9,3 z" fill="#2e7d32" />
+                </marker>
+            </defs>
+
+            <!-- 第1层: C++ new Test[n] -->
+            <rect x="350" y="20" width="200" height="40" rx="20" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="450" y="45" text-anchor="middle" fill="white" font-size="14" font-weight="bold">C++ new
+                Test[n]</text>
+
+            <!-- 箭头1 -->
+            <line x1="450" y1="60" x2="450" y2="85" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 第2层: operator new[] -->
+            <rect x="300" y="90" width="300" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="450" y="115" text-anchor="middle" fill="white" font-size="13">C++ operator new[](n * sizeof(T) +
+                8)</text>
+
+            <!-- 箭头2 -->
+            <line x1="450" y1="130" x2="450" y2="155" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 第3层: malloc -->
+            <rect x="350" y="160" width="200" height="40" rx="5" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="450" y="185" text-anchor="middle" fill="white" font-size="14">malloc(size)</text>
+
+            <!-- 箭头3 -->
+            <line x1="450" y1="200" x2="450" y2="225" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 第4层: __libc_malloc -->
+            <rect x="330" y="230" width="240" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="450" y="255" text-anchor="middle" fill="white" font-size="14">__libc_malloc(size)</text>
+
+            <!-- 箭头4 -->
+            <line x1="450" y1="270" x2="450" y2="295" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 第5层: checked_request2size -->
+            <rect x="290" y="300" width="320" height="40" rx="5" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="450" y="325" text-anchor="middle" fill="white" font-size="13">nb =
+                checked_request2size(size)</text>
+
+            <!-- 箭头5 -->
+            <line x1="450" y1="340" x2="450" y2="365" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 第6层: 菱形判断 nb < tcache_max_bytes -->
+            <polygon points="450,370 580,420 450,470 320,420" fill="#e0e0e0" stroke="#9e9e9e" stroke-width="2" />
+            <text x="450" y="415" text-anchor="middle" fill="#333" font-size="12">nb &lt; tcache_max_bytes ?</text>
+            <text x="450" y="430" text-anchor="middle" fill="#333" font-size="11">(约1MB)</text>
+
+            <!-- yes 分支 - 向左 -->
+            <line x1="320" y1="420" x2="200" y2="420" stroke="#333" stroke-width="2" />
+            <line x1="200" y1="420" x2="200" y2="475" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="260" y="410" fill="#2e7d32" font-size="12" font-weight="bold">yes</text>
+
+            <!-- 第7层左: 菱形判断 tcache entries -->
+            <polygon points="200,480 310,520 200,560 90,520" fill="#e0e0e0" stroke="#9e9e9e" stroke-width="2" />
+            <text x="200" y="515" text-anchor="middle" fill="#333" font-size="10">tcache->entries[idx]</text>
+            <text x="200" y="530" text-anchor="middle" fill="#333" font-size="10">!= NULL ?</text>
+
+            <!-- yes 从 tcache 判断向左下 -->
+            <line x1="90" y1="520" x2="50" y2="520" stroke="#333" stroke-width="2" />
+            <line x1="50" y1="520" x2="50" y2="575" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <text x="70" y="510" fill="#2e7d32" font-size="12" font-weight="bold">yes</text>
+
+            <!-- tcache_get() 绿色框 -->
+            <rect x="10" y="580" width="120" height="35" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="70" y="602" text-anchor="middle" fill="white" font-size="12">tcache_get()</text>
+
+            <!-- tcache_get 直接跳到返回 -->
+            <line x1="70" y1="615" x2="70" y2="1180" stroke="#2e7d32" stroke-width="2" stroke-dasharray="5,3" />
+            <line x1="70" y1="1180" x2="350" y2="1180" stroke="#2e7d32" stroke-width="2"
+                marker-end="url(#arrow-green)" />
+
+            <!-- no 分支从 tcache 判断 - 向下 -->
+            <line x1="200" y1="560" x2="200" y2="590" stroke="#333" stroke-width="2" />
+            <text x="215" y="580" fill="#c62828" font-size="12" font-weight="bold">no</text>
+
+            <!-- no 分支 - 向右下到 __libc_malloc2 -->
+            <line x1="580" y1="420" x2="650" y2="420" stroke="#333" stroke-width="2" />
+            <text x="600" y="410" fill="#c62828" font-size="12" font-weight="bold">no</text>
+            <line x1="650" y1="420" x2="650" y2="475" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- __libc_malloc2 -->
+            <rect x="530" y="480" width="240" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="650" y="505" text-anchor="middle" fill="white" font-size="14">__libc_malloc2(size)</text>
+
+            <!-- 箭头 -->
+            <line x1="650" y1="520" x2="650" y2="545" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- arena_get -->
+            <rect x="510" y="550" width="280" height="35" rx="5" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="650" y="572" text-anchor="middle" fill="white" font-size="12">arena_get() (multithreaded)</text>
+
+            <!-- 箭头 -->
+            <line x1="650" y1="585" x2="650" y2="610" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- _int_malloc -->
+            <rect x="510" y="615" width="280" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="650" y="640" text-anchor="middle" fill="white" font-size="14">_int_malloc(arena, nb)</text>
+
+            <!-- 连接 tcache no 分支到 _int_malloc -->
+            <line x1="200" y1="590" x2="200" y2="635" stroke="#333" stroke-width="2" />
+            <line x1="200" y1="635" x2="505" y2="635" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 箭头到 bins -->
+            <line x1="650" y1="655" x2="650" y2="680" stroke="#333" stroke-width="2" />
+
+            <!-- 水平线连接所有 bins -->
+            <line x1="100" y1="700" x2="900" y2="700" stroke="#333" stroke-width="2" />
+
+            <!-- 垂直线到各个 bin -->
+            <line x1="100" y1="700" x2="100" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="220" y1="700" x2="220" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="360" y1="700" x2="360" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="510" y1="700" x2="510" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="650" y1="680" x2="650" y2="700" stroke="#333" stroke-width="2" />
+            <line x1="650" y1="700" x2="650" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="780" y1="700" x2="780" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+            <line x1="900" y1="700" x2="900" y2="730" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- fastbin -->
+            <rect x="40" y="735" width="120" height="50" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="100" y="755" text-anchor="middle" fill="white" font-size="12" font-weight="bold">fastbin</text>
+            <text x="100" y="772" text-anchor="middle" fill="white" font-size="10">(≤128B)</text>
+
+            <!-- smallbin -->
+            <rect x="160" y="735" width="120" height="50" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="220" y="755" text-anchor="middle" fill="white" font-size="12" font-weight="bold">smallbin</text>
+            <text x="220" y="772" text-anchor="middle" fill="white" font-size="10">(&lt;1024B)</text>
+
+            <!-- malloc_consolidate -->
+            <rect x="290" y="735" width="140" height="60" rx="5" fill="#757575" stroke="#424242" stroke-width="2" />
+            <text x="360" y="752" text-anchor="middle" fill="white" font-size="10"
+                font-weight="bold">malloc_consolidate()</text>
+            <text x="360" y="767" text-anchor="middle" fill="white" font-size="8">(nb≥1024时)</text>
+            <text x="360" y="782" text-anchor="middle" fill="white" font-size="8">合并fastbin→unsorted</text>
+
+            <!-- unsorted bin -->
+            <rect x="440" y="735" width="140" height="50" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="510" y="755" text-anchor="middle" fill="white" font-size="11" font-weight="bold">unsorted
+                bin</text>
+            <text x="510" y="772" text-anchor="middle" fill="white" font-size="9">(traverse & sort)</text>
+
+            <!-- large bin -->
+            <rect x="590" y="735" width="120" height="50" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="650" y="755" text-anchor="middle" fill="white" font-size="12" font-weight="bold">large bin</text>
+            <text x="650" y="772" text-anchor="middle" fill="white" font-size="9">(≥1024B, best-fit)</text>
+
+            <!-- top chunk -->
+            <rect x="720" y="735" width="120" height="50" rx="5" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="780" y="755" text-anchor="middle" fill="white" font-size="12" font-weight="bold">top chunk</text>
+            <text x="780" y="772" text-anchor="middle" fill="white" font-size="10">(cut)</text>
+
+            <!-- sysmalloc -->
+            <rect x="850" y="735" width="120" height="50" rx="5" fill="#e65100" stroke="#bf360c" stroke-width="2" />
+            <text x="910" y="755" text-anchor="middle" fill="white" font-size="11" font-weight="bold">sysmalloc()</text>
+            <text x="910" y="772" text-anchor="middle" fill="white" font-size="9">sbrk() / mmap()</text>
+
+            <!-- 串行流程说明 -->
+            <text x="500" y="820" text-anchor="middle" fill="#666" font-size="11">↑ 串行尝试: fastbin → smallbin → unsorted
+                → large → top → sysmalloc</text>
+
+            <!-- 汇聚线 -->
+            <line x1="100" y1="785" x2="100" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="220" y1="785" x2="220" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="360" y1="785" x2="360" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="510" y1="785" x2="510" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="650" y1="785" x2="650" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="780" y1="785" x2="780" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="910" y1="785" x2="910" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="100" y1="850" x2="910" y2="850" stroke="#333" stroke-width="2" />
+            <line x1="500" y1="850" x2="500" y2="880" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- set_head -->
+            <rect x="350" y="885" width="300" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="500" y="910" text-anchor="middle" fill="white" font-size="13">set_head(victim, nb | P)</text>
+
+            <!-- 箭头 -->
+            <line x1="500" y1="925" x2="500" y2="955" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- chunk2mem -->
+            <rect x="320" y="960" width="360" height="40" rx="5" fill="#1565c0" stroke="#0d47a1" stroke-width="2" />
+            <text x="500" y="985" text-anchor="middle" fill="white" font-size="13">return chunk2mem(victim) // chunk +
+                16</text>
+
+            <!-- 箭头 -->
+            <line x1="500" y1="1000" x2="500" y2="1030" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- Write cookie -->
+            <rect x="350" y="1035" width="300" height="40" rx="5" fill="#f9a825" stroke="#f57f17" stroke-width="2" />
+            <text x="500" y="1060" text-anchor="middle" fill="#333" font-size="13" font-weight="bold">Write cookie (if
+                needed)</text>
+
+            <!-- 箭头 -->
+            <line x1="500" y1="1075" x2="500" y2="1105" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- 调用构造函数 -->
+            <rect x="320" y="1110" width="360" height="40" rx="5" fill="#7b1fa2" stroke="#4a148c" stroke-width="2" />
+            <text x="500" y="1135" text-anchor="middle" fill="white" font-size="13">调用 n 次构造函数 T()</text>
+
+            <!-- 箭头 -->
+            <line x1="500" y1="1150" x2="500" y2="1160" stroke="#333" stroke-width="2" marker-end="url(#arrow)" />
+
+            <!-- return arr -->
+            <rect x="350" y="1165" width="300" height="40" rx="5" fill="#2e7d32" stroke="#1b5e20" stroke-width="2" />
+            <text x="500" y="1190" text-anchor="middle" fill="white" font-size="13">return mem + 8 // 数组首地址</text>
+
+            <!-- 内存布局图 -->
+            <rect x="150" y="1240" width="700" height="130" rx="10" fill="#f5f5f5" stroke="#bdbdbd" stroke-width="2" />
+            <text x="500" y="1265" text-anchor="middle" fill="#333" font-size="14" font-weight="bold">最终内存布局 (new
+                Test[5], sizeof(Test)=4)</text>
+
+            <!-- chunk header -->
+            <rect x="170" y="1280" width="100" height="40" fill="#9e9e9e" stroke="#616161" stroke-width="1" />
+            <text x="220" y="1295" text-anchor="middle" fill="white" font-size="10">prev_size</text>
+            <text x="220" y="1310" text-anchor="middle" fill="white" font-size="9">(8B)</text>
+
+            <rect x="270" y="1280" width="100" height="40" fill="#e53935" stroke="#b71c1c" stroke-width="1" />
+            <text x="320" y="1295" text-anchor="middle" fill="white" font-size="10">size | P</text>
+            <text x="320" y="1310" text-anchor="middle" fill="white" font-size="9">(8B) = 0x31</text>
+
+            <!-- cookie -->
+            <rect x="370" y="1280" width="80" height="40" fill="#fdd835" stroke="#f9a825" stroke-width="1" />
+            <text x="410" y="1295" text-anchor="middle" fill="#333" font-size="10">cookie</text>
+            <text x="410" y="1310" text-anchor="middle" fill="#333" font-size="9">(8B) = 5</text>
+
+            <!-- user data -->
+            <rect x="450" y="1280" width="200" height="40" fill="#43a047" stroke="#2e7d32" stroke-width="1" />
+            <text x="550" y="1295" text-anchor="middle" fill="white" font-size="10">arr[0]...arr[4]</text>
+            <text x="550" y="1310" text-anchor="middle" fill="white" font-size="9">(20B 用户数据)</text>
+
+            <!-- padding -->
+            <rect x="650" y="1280" width="60" height="40" fill="#bdbdbd" stroke="#9e9e9e" stroke-width="1" />
+            <text x="680" y="1295" text-anchor="middle" fill="#333" font-size="10">pad</text>
+            <text x="680" y="1310" text-anchor="middle" fill="#333" font-size="9">(4B)</text>
+
+            <!-- 指针标注 -->
+            <text x="220" y="1340" text-anchor="middle" fill="#666" font-size="10">↑ chunk</text>
+            <text x="410" y="1340" text-anchor="middle" fill="#666" font-size="10">↑ mem (malloc返回)</text>
+            <text x="480" y="1355" text-anchor="middle" fill="#666" font-size="10">↑ arr (new[]返回)</text>
+
+            <!-- 总大小 -->
+            <text x="500" y="1380" text-anchor="middle" fill="#333" font-size="11">总共 48 bytes (0x30), size字段 = 0x31 (48
+                | PREV_INUSE)</text>
+
+        </svg>
+    </div>
+</body>
+
+</html>

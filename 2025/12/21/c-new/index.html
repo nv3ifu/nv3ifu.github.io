@@ -1,0 +1,342 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>C++ new | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="C++ 中 new 是如何工作的呢？ 创建对象数组示例以创建一个对象数组举例： 1234567891011121314#include &lt;iostream&gt;class Test &#123;public:  int value;  Test(int v) : value(v) &#123; std::cout &lt;&lt; &quot;ctor&quot; &lt;&lt; val">
+<meta property="og:type" content="article">
+<meta property="og:title" content="C++ new">
+<meta property="og:url" content="https://nv3ifu.github.io/2025/12/21/c-new/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:description" content="C++ 中 new 是如何工作的呢？ 创建对象数组示例以创建一个对象数组举例： 1234567891011121314#include &lt;iostream&gt;class Test &#123;public:  int value;  Test(int v) : value(v) &#123; std::cout &lt;&lt; &quot;ctor&quot; &lt;&lt; val">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/image12.png">
+<meta property="article:published_time" content="2025-12-20T16:41:04.000Z">
+<meta property="article:modified_time" content="2025-12-20T22:48:34.585Z">
+<meta property="article:author" content="nv3ifu">
+<meta property="article:tag" content="C++">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/image12.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "C++ new",
+  "url": "https://nv3ifu.github.io/2025/12/21/c-new/",
+  "image": "https://nv3ifu.github.io/image/image12.png",
+  "datePublished": "2025-12-20T16:41:04.000Z",
+  "dateModified": "2025-12-20T22:48:34.585Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "nv3ifu",
+      "url": "https://nv3ifu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.png"><link rel="canonical" href="https://nv3ifu.github.io/2025/12/21/c-new/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'C++ new',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/image12.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a><a class="nav-page-title" href="/"><span class="site-name">C++ new</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"></div></nav><div id="post-info"><h1 class="post-title">C++ new</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-12-20T16:41:04.000Z" title="Created 2025-12-21 00:41:04">2025-12-21</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2025-12-20T22:48:34.585Z" title="Updated 2025-12-21 06:48:34">2025-12-21</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/C-C/">C/C++</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>C++ 中 <code>new</code> 是如何工作的呢？</p>
+<h2 id="创建对象数组示例"><a href="#创建对象数组示例" class="headerlink" title="创建对象数组示例"></a>创建对象数组示例</h2><p>以创建一个对象数组举例：</p>
+<figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;iostream&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="keyword">class</span> <span class="title class_">Test</span> &#123;</span><br><span class="line"><span class="keyword">public</span>:</span><br><span class="line">  <span class="type">int</span> value;</span><br><span class="line">  <span class="built_in">Test</span>(<span class="type">int</span> v) : <span class="built_in">value</span>(v) &#123; std::cout &lt;&lt; <span class="string">&quot;ctor&quot;</span> &lt;&lt; value &lt;&lt; std::endl; &#125;</span><br><span class="line">  ~<span class="built_in">Test</span>() &#123; std::cout &lt;&lt; <span class="string">&quot;dtor&quot;</span> &lt;&lt; value &lt;&lt; std::endl; &#125;</span><br><span class="line">&#125;;</span><br><span class="line"></span><br><span class="line"><span class="function"><span class="type">int</span> <span class="title">main</span><span class="params">()</span> </span>&#123;</span><br><span class="line">  Test *arr = <span class="keyword">new</span> Test[<span class="number">5</span>]&#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;;</span><br><span class="line">  <span class="keyword">delete</span>[] arr;</span><br><span class="line">  <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>arr</code> 拿到的地址是 <code>0x000055555556b2b8</code>，指向的是第一个对象。</p>
+<h2 id="内存布局"><a href="#内存布局" class="headerlink" title="内存布局"></a>内存布局</h2><p><img src="/image/image_copy.png" alt="内存布局示例"></p>
+<p>可以看到小端序存储的五个 <code>value</code>。这就是用户通过调用 <code>new</code> 拿到的指针，但这并不是 <code>new</code> 申请的全部内存。</p>
+<h2 id="Cookie-的原理"><a href="#Cookie-的原理" class="headerlink" title="Cookie 的原理"></a>Cookie 的原理</h2><p>向前看有一个 8 字节的 <code>cookie</code> 值：<code>0x5</code>。</p>
+<h3 id="GCC-判断是否需要-Cookie"><a href="#GCC-判断是否需要-Cookie" class="headerlink" title="GCC 判断是否需要 Cookie"></a>GCC 判断是否需要 Cookie</h3><p>GCC 通过如下代码判断是否需要 <code>cookie</code>（<code>gcc/cp/class.cc</code> 第 6219-6266 行），如果有非平凡析构函数，就需要 <code>cookie</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">static</span> <span class="type">bool</span></span></span><br><span class="line"><span class="function"><span class="title">type_requires_array_cookie</span> <span class="params">(tree type)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  tree fns;</span><br><span class="line">  <span class="type">bool</span> has_two_argument_delete_p = <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">  <span class="built_in">gcc_assert</span> (<span class="built_in">CLASS_TYPE_P</span> (type));</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* If there&#x27;s a non-trivial destructor, we need a cookie.  In order</span></span><br><span class="line"><span class="comment">     to iterate through the array calling the destructor for each</span></span><br><span class="line"><span class="comment">     element, we&#x27;ll have to know how many elements there are.  */</span></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">TYPE_HAS_NONTRIVIAL_DESTRUCTOR</span> (type))</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">true</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* If the usual deallocation function is a two-argument whose second</span></span><br><span class="line"><span class="comment">     argument is of type `size_t&#x27;, then we have to pass the size of</span></span><br><span class="line"><span class="comment">     the array to the deallocation function, so we will need to store</span></span><br><span class="line"><span class="comment">     a cookie.  */</span></span><br><span class="line">  fns = <span class="built_in">lookup_fnfields</span> (<span class="built_in">TYPE_BINFO</span> (type),</span><br><span class="line">                         <span class="built_in">ovl_op_identifier</span> (<span class="literal">false</span>, VEC_DELETE_EXPR),</span><br><span class="line">                         <span class="comment">/*protect=*/</span><span class="number">0</span>, tf_warning_or_error);</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* If there are no `operator []&#x27; members, or the lookup is</span></span><br><span class="line"><span class="comment">     ambiguous, then we don&#x27;t need a cookie.  */</span></span><br><span class="line">  <span class="keyword">if</span> (!fns || fns == error_mark_node)</span><br><span class="line">    <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* Loop through all of the functions.  */</span></span><br><span class="line">  <span class="keyword">for</span> (lkp_iterator <span class="built_in">iter</span> (<span class="built_in">BASELINK_FUNCTIONS</span> (fns)); iter; ++iter)</span><br><span class="line">  &#123;</span><br><span class="line">    tree fn = *iter;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* See if this function is a one-argument delete function.  If</span></span><br><span class="line"><span class="comment">       it is, then it will be the usual deallocation function.  */</span></span><br><span class="line">    tree second_parm = <span class="built_in">TREE_CHAIN</span> (<span class="built_in">TYPE_ARG_TYPES</span> (<span class="built_in">TREE_TYPE</span> (fn)));</span><br><span class="line">    <span class="keyword">if</span> (second_parm == void_list_node)</span><br><span class="line">      <span class="keyword">return</span> <span class="literal">false</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Do not consider this function if its second argument is an</span></span><br><span class="line"><span class="comment">       ellipsis.  */</span></span><br><span class="line">    <span class="keyword">if</span> (!second_parm)</span><br><span class="line">      <span class="keyword">continue</span>;</span><br><span class="line"></span><br><span class="line">    <span class="comment">/* Otherwise, if we have a two-argument function and the second</span></span><br><span class="line"><span class="comment">       argument is `size_t&#x27;, it will be the usual deallocation</span></span><br><span class="line"><span class="comment">       function -- unless there is one-argument function, too.  */</span></span><br><span class="line">    <span class="keyword">if</span> (<span class="built_in">TREE_CHAIN</span> (second_parm) == void_list_node</span><br><span class="line">        &amp;&amp; <span class="built_in">same_type_p</span> (<span class="built_in">TREE_VALUE</span> (second_parm), size_type_node))</span><br><span class="line">      has_two_argument_delete_p = <span class="literal">true</span>;</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> has_two_argument_delete_p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Cookie-的大小计算"><a href="#Cookie-的大小计算" class="headerlink" title="Cookie 的大小计算"></a>Cookie 的大小计算</h3><p><code>cookie</code> 的大小通过如下代码计算：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// cookie_size = max(sizeof(size_t), alignof(type))</span></span><br><span class="line"><span class="comment">// 64 位系统: max(8, 4) = 8 字节</span></span><br><span class="line"></span><br><span class="line"><span class="function">tree</span></span><br><span class="line"><span class="function"><span class="title">default_cxx_get_cookie_size</span> <span class="params">(tree type)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  tree cookie_size;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* 我们需要分配一个额外的 max (sizeof (size_t), alignof (true_type)) 字节。*/</span></span><br><span class="line">  tree sizetype_size;</span><br><span class="line">  tree type_align;</span><br><span class="line"></span><br><span class="line">  sizetype_size = <span class="built_in">size_in_bytes</span> (sizetype);</span><br><span class="line">  type_align = <span class="built_in">size_int</span> (<span class="built_in">TYPE_ALIGN_UNIT</span> (type));</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (<span class="built_in">tree_int_cst_lt</span> (type_align, sizetype_size))</span><br><span class="line">    cookie_size = sizetype_size;</span><br><span class="line">  <span class="keyword">else</span></span><br><span class="line">    cookie_size = type_align;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> cookie_size;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p><code>cookie</code> 的值就是对象的数目，例子中就是 <code>5</code>。</p>
+<h2 id="汇编代码分析"><a href="#汇编代码分析" class="headerlink" title="汇编代码分析"></a>汇编代码分析</h2><p>例子中 <code>Test *arr = new Test[5]&#123;1, 2, 3, 4, 5&#125;;</code> 生成的汇编如下：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br></pre></td><td class="code"><pre><span class="line">mov    edi,0x1c  // 参数: 0x1c = 28 字节 (8 cookie + 5*4 数据)</span><br><span class="line">call   0x5555555550c0 &lt;operator new[](unsigned long)@plt&gt;</span><br><span class="line">mov    r13,rax  // new 返回的地址放入 r13                </span><br><span class="line">mov    QWORD PTR [r13+0x0],0x5  // 写入 cookie = 5 </span><br><span class="line">lea    r12,[r13+0x8]  // 跳过 cookie          </span><br><span class="line">mov    ebx,0x4       // 剩余待构造数量           </span><br><span class="line">mov    esi,0x1       // 第二个参数 value = 1       </span><br><span class="line">mov    rdi,r12        // 第一个参数 this 指针就是 &amp;arr[0]          </span><br><span class="line">call   0x5555555553f2 &lt;Test::Test(int)&gt; // 调用构造函数 </span><br><span class="line">lea    r14,[r12+0x4]            </span><br><span class="line">sub    rbx,0x1                  </span><br><span class="line">mov    esi,0x2                  </span><br><span class="line">mov    rdi,r14                  </span><br><span class="line">call   0x5555555553f2 &lt;Test::Test(int)&gt; // 构造第二个</span><br><span class="line">add    r14,0x4                  </span><br><span class="line">sub    rbx,0x1                  </span><br><span class="line">mov    esi,0x3                  </span><br><span class="line">mov    rdi,r14                  </span><br><span class="line">call   0x5555555553f2 &lt;Test::Test(int)&gt; // 构造第三个</span><br><span class="line">add    r14,0x4                  </span><br><span class="line">sub    rbx,0x1                  </span><br><span class="line">mov    esi,0x4                  </span><br><span class="line">mov    rdi,r14                  </span><br><span class="line">call   0x5555555553f2 &lt;Test::Test(int)&gt; // 构造第四个</span><br><span class="line">lea    rax,[r14+0x4]            </span><br><span class="line">sub    rbx,0x1                  </span><br><span class="line">mov    esi,0x5                  </span><br><span class="line">mov    rdi,rax                  </span><br><span class="line">call   0x5555555553f2 &lt;Test::Test(int)&gt; // 构造第五个</span><br></pre></td></tr></table></figure>
+
+<h2 id="深入-operator-new"><a href="#深入-operator-new" class="headerlink" title="深入 operator new[]"></a>深入 operator new[]</h2><p>这个流程基本清楚了，我们看看 <code>operator new[]</code> 里面到底做了什么。</p>
+<h3 id="operator-new-源码"><a href="#operator-new-源码" class="headerlink" title="operator new[] 源码"></a>operator new[] 源码</h3><p>源码如下，直接调用 <code>new</code>，这里没有任何区别：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// libstdc++-v3\libsupc++\new_opv.cc</span></span><br><span class="line"></span><br><span class="line">_GLIBCXX_WEAK_DEFINITION <span class="type">void</span>*</span><br><span class="line"><span class="keyword">operator</span> <span class="keyword">new</span>[] (std::<span class="type">size_t</span> sz) _GLIBCXX_THROW (std::bad_alloc)</span><br><span class="line">&#123;</span><br><span class="line">  <span class="keyword">return</span> ::<span class="keyword">operator</span> <span class="built_in">new</span>(sz);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="operator-new-源码-1"><a href="#operator-new-源码-1" class="headerlink" title="operator new 源码"></a>operator new 源码</h3><p><code>new</code> 源码如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// libstdc++-v3\libsupc++\new_op.cc</span></span><br><span class="line"></span><br><span class="line"><span class="function">_GLIBCXX_WEAK_DEFINITION <span class="type">void</span> *</span></span><br><span class="line"><span class="function"><span class="keyword">operator</span> <span class="title">new</span> <span class="params">(std::<span class="type">size_t</span> sz)</span> _<span class="title">GLIBCXX_THROW</span> <span class="params">(std::bad_alloc)</span></span></span><br><span class="line"><span class="function"></span>&#123;</span><br><span class="line">  <span class="type">void</span> *p;</span><br><span class="line"></span><br><span class="line">  <span class="comment">/* malloc (0) is unpredictable; avoid it.  */</span></span><br><span class="line">  <span class="keyword">if</span> (__builtin_expect (sz == <span class="number">0</span>, <span class="literal">false</span>))</span><br><span class="line">    sz = <span class="number">1</span>; <span class="comment">// 如果传入的申请 size 是 0，改为 1</span></span><br><span class="line"></span><br><span class="line">  <span class="keyword">while</span> ((p = <span class="built_in">malloc</span> (sz)) == <span class="number">0</span>) <span class="comment">// 循环调用 malloc，除非分配成功或者抛出异常 bad_alloc</span></span><br><span class="line">  &#123;</span><br><span class="line">    new_handler handler = std::<span class="built_in">get_new_handler</span> (); <span class="comment">// 用户可以注册回调函数，用来清理一些内存。在这里 malloc 分配不出来，返回 NULL，new 就会尝试获取这个回调函数。</span></span><br><span class="line"></span><br><span class="line">    <span class="keyword">if</span> (! handler) <span class="comment">// 如果没有设置，就抛出异常</span></span><br><span class="line">      _GLIBCXX_THROW_OR_ABORT(<span class="built_in">bad_alloc</span>());</span><br><span class="line"></span><br><span class="line">    <span class="built_in">handler</span> (); <span class="comment">/* 调用回调，这里的回调必须做以下之一，否则这里可能导致无限循环：</span></span><br><span class="line"><span class="comment">      释放内存，让下次 malloc 成功</span></span><br><span class="line"><span class="comment">      抛出 bad_alloc 异常（或派生类）</span></span><br><span class="line"><span class="comment">      调用 std::abort() 或 std::exit() 终止程序</span></span><br><span class="line"><span class="comment">      调用 std::set_new_handler(nullptr) 移除自己，下次循环就会抛异常*/</span></span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">return</span> p;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h2 id="Malloc-的实现"><a href="#Malloc-的实现" class="headerlink" title="Malloc 的实现"></a>Malloc 的实现</h2><p>到这里 <code>new</code> 就结束了，下一步是查看 <code>malloc</code>。</p>
+<h3 id="Windows-vs-Linux-的差异"><a href="#Windows-vs-Linux-的差异" class="headerlink" title="Windows vs Linux 的差异"></a>Windows vs Linux 的差异</h3><p><code>glibc</code> 的 <code>malloc</code> 和 <code>ucrt</code> 不一样，它是直接就进入到了内存分配的逻辑了，<code>ucrt</code> 是又包装了一层，然后调用的 <code>HeapAlloc</code>，在 <code>HeapAlloc</code> 中进行实际的内存分配，如下：</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="string">&quot;C&quot;</span> __declspec(noinline) _CRTRESTRICT <span class="type">void</span>* __cdecl _malloc_base(<span class="type">size_t</span> <span class="type">const</span> size)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="comment">// Ensure that the requested size is not too large:</span></span><br><span class="line">    _VALIDATE_RETURN_NOEXC(_HEAP_MAXREQ &gt;= size, ENOMEM, <span class="literal">nullptr</span>);</span><br><span class="line"></span><br><span class="line">    <span class="comment">// Ensure we request an allocation of at least one byte:</span></span><br><span class="line">    <span class="type">size_t</span> <span class="type">const</span> actual_size = size == <span class="number">0</span> ? <span class="number">1</span> : size;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (;;)</span><br><span class="line">    &#123;</span><br><span class="line">        <span class="type">void</span>* <span class="type">const</span> block = <span class="built_in">HeapAlloc</span>(__acrt_heap, <span class="number">0</span>, actual_size);</span><br><span class="line">        <span class="keyword">if</span> (block)</span><br><span class="line">            <span class="keyword">return</span> block;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">// Otherwise, see if we need to call the new handler, and if so call it.</span></span><br><span class="line">        <span class="comment">// If the new handler fails, just return nullptr:</span></span><br><span class="line">        <span class="keyword">if</span> (_query_new_mode() == <span class="number">0</span> || !_callnewh(actual_size))</span><br><span class="line">        &#123;</span><br><span class="line">            errno = ENOMEM;</span><br><span class="line">            <span class="keyword">return</span> <span class="literal">nullptr</span>;</span><br><span class="line">        &#125;</span><br><span class="line">    </span><br><span class="line">        <span class="comment">// The new handler was successful; try to allocate again...</span></span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Linux-堆管理器"><a href="#Linux-堆管理器" class="headerlink" title="Linux 堆管理器"></a>Linux 堆管理器</h3><p>说回 <code>glibc</code> 的 <code>malloc</code>，它的功能就和 <code>HeapAlloc</code> 基本一样了，就是一个堆管理器。</p>
+<p>它们的逻辑大体都是根据不同的 <code>size</code> 阈值，去 <code>tls</code> 缓存、堆的前端、后端拿内存，堆不够就 <code>sbrk</code> 拓展，大内存就 <code>mmap</code> &#x2F; <code>RtlpHpLargeAlloc</code>。正是因为有堆管理器，使得绝大部分的堆分配都不需要进内核，只需要后端批发内存，切分给前端，供调用者使用。</p>
+<h2 id="Linux-内存分配流程图"><a href="#Linux-内存分配流程图" class="headerlink" title="Linux 内存分配流程图"></a>Linux 内存分配流程图</h2><iframe src="/html/malloc_flow_svg.html" width="100%" height="1500" frameborder="0" scrolling="no"></iframe>
+
+<h2 id="Windows-内存分配流程"><a href="#Windows-内存分配流程" class="headerlink" title="Windows 内存分配流程"></a>Windows 内存分配流程</h2><p>Windows 上大概的流程是：<code>LFH</code> 低碎片堆 -&gt; <code>VS Allocator</code> -&gt; 后端 <code>RtlpHpAllocateHeapBackend</code> -&gt; <code>RtlpHpLargeAlloc</code> 分配大页，降低 <code>TLB</code> 消耗。</p>
+<p>然后进入内核，分配一个 <code>VAD</code>，插入这个进程的 <code>EPROCESS</code>。分配到这里就结束了，但是还没有构建有效 <code>pte</code>。真正的物理内存分配被推迟到了内存访问的时候，触发缺页异常，拿到异常信息后去 <code>vad</code> 中寻找该地址，如果已经注册，那么就去零页（堆 &#x2F; <code>VirtualAlloc</code> 初始化的时候使用）&#x2F; 空闲页的 <code>pfn</code> 链表中拿一个页面，挂在这个虚拟地址上。</p>
+<h2 id="Malloc-的-Chunk-结构"><a href="#Malloc-的-Chunk-结构" class="headerlink" title="Malloc 的 Chunk 结构"></a>Malloc 的 Chunk 结构</h2><p>我们再来看一下 <code>glibc</code> 中添加的头信息，它和 <code>new[]</code> 一样，也会加一个头，因为 <code>free</code> 的时候不传入大小，它肯定有地方保存申请的大小。</p>
+<p><code>malloc</code> 申请的 <code>chunk</code> 结构如下：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span> &#123;</span></span><br><span class="line">  INTERNAL_SIZE_T    mchunk_prev_size;  <span class="comment">/* Size of previous chunk (if free).  */</span></span><br><span class="line">  INTERNAL_SIZE_T    mchunk_size;    <span class="comment">/* Size in bytes, including overhead. */</span></span><br><span class="line"></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd</span>;</span>     <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk</span>;</span></span><br><span class="line"></span><br><span class="line">  <span class="comment">/* Only used for large blocks: pointer to next larger size.  */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">fd_nextsize</span>;</span> <span class="comment">/* double links -- used only if free. */</span></span><br><span class="line">  <span class="class"><span class="keyword">struct</span> <span class="title">malloc_chunk</span>* <span class="title">bk_nextsize</span>;</span></span><br><span class="line">&#125;;</span><br></pre></td></tr></table></figure>
+
+<h3 id="Chunk-字段详解"><a href="#Chunk-字段详解" class="headerlink" title="Chunk 字段详解"></a>Chunk 字段详解</h3><p>这两个字段就是 <code>header</code>：</p>
+<h4 id="mchunk-prev-size-8-字节"><a href="#mchunk-prev-size-8-字节" class="headerlink" title="mchunk_prev_size (8 字节)"></a>mchunk_prev_size (8 字节)</h4><ul>
+<li>前一个 <code>chunk</code> 空闲时：存储前一个 <code>chunk</code> 的大小，用于向前合并</li>
+<li>前一个 <code>chunk</code> 在用时：这块空间被前一个 <code>chunk</code> 当用户数据用</li>
+</ul>
+<h4 id="mchunk-size-8-字节"><a href="#mchunk-size-8-字节" class="headerlink" title="mchunk_size (8 字节)"></a>mchunk_size (8 字节)</h4><ul>
+<li>高位：当前 <code>chunk</code> 的总大小</li>
+<li>低 3 位：三个标志位</li>
+</ul>
+<h3 id="标志位说明"><a href="#标志位说明" class="headerlink" title="标志位说明"></a>标志位说明</h3><p>三个标志位：</p>
+<ul>
+<li><strong><code>P</code> (<code>PREV_INUSE</code> &#x3D; <code>0x1</code>)</strong>：前一个相邻 <code>chunk</code> 正在使用中<ul>
+<li><code>P=1</code>：前一个 <code>chunk</code> 在用，<code>prev_size</code> 字段无效</li>
+<li><code>P=0</code>：前一个 <code>chunk</code> 空闲，<code>prev_size</code> 存储其大小，可用于合并</li>
+</ul>
+</li>
+<li><strong><code>M</code> (<code>IS_MMAPPED</code> &#x3D; <code>0x2</code>)</strong>：这个 <code>chunk</code> 是通过 <code>mmap()</code> 分配的<ul>
+<li><code>M=1</code>：<code>mmap</code> 分配，释放时直接 <code>munmap()</code></li>
+<li><code>M=0</code>：<code>sbrk</code> &#x2F; <code>heap</code> 分配</li>
+</ul>
+</li>
+<li><strong><code>A</code> (<code>NON_MAIN_ARENA</code> &#x3D; <code>0x4</code>)</strong>：这个 <code>chunk</code> 不属于主 <code>arena</code><ul>
+<li><code>A=1</code>：来自非主 <code>arena</code>（多线程场景）</li>
+<li><code>A=0</code>：来自 <code>main_arena</code></li>
+</ul>
+</li>
+</ul>
+<p>后面的这些字段只在 <code>chunk</code> 空闲时使用，用于把空闲块串成链表，当这个 <code>chunk</code> 被使用的时候，这些字段会被用户数据覆盖：</p>
+<ul>
+<li><p><strong><code>fd</code> &#x2F; <code>bk</code></strong> (所有空闲 <code>chunk</code> 都用)</p>
+<ul>
+<li><code>fd</code> &#x3D; <code>forward</code>  → 指向链表中下一个空闲 <code>chunk</code></li>
+<li><code>bk</code> &#x3D; <code>backward</code> → 指向链表中上一个空闲 <code>chunk</code></li>
+<li>用于 <code>smallbin</code>、<code>unsorted bin</code>、<code>large bin</code> 的双向循环链表。</li>
+</ul>
+</li>
+<li><p><strong><code>fd_nextsize</code> &#x2F; <code>bk_nextsize</code></strong> (仅 <code>large bin</code> 用)</p>
+<ul>
+<li><code>fd_nextsize</code> → 指向下一个不同大小的空闲 <code>chunk</code></li>
+<li><code>bk_nextsize</code> → 指向上一个不同大小的空闲 <code>chunk</code></li>
+</ul>
+</li>
+</ul>
+<h2 id="完整内存布局示例"><a href="#完整内存布局示例" class="headerlink" title="完整内存布局示例"></a>完整内存布局示例</h2><p>再看之前的例子：</p>
+<p><img src="/image/image_copy.png" alt="内存布局示例"></p>
+<p>根据上面的学习，就可以很清晰地分析出它的内存布局：</p>
+<figure class="highlight text"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">chunk ──→ ┌─────────────────┐ +0x00</span><br><span class="line">          │ prev_size = 0   │ 8B</span><br><span class="line">          ├─────────────────┤ +0x08</span><br><span class="line">          │ size = 0x31     │ 8B (48 | PREV_INUSE)</span><br><span class="line">mem ────→ ├─────────────────┤ +0x10  ← malloc 返回这里</span><br><span class="line">          │ cookie = 5      │ 8B</span><br><span class="line">arr ────→ ├─────────────────┤ +0x18  ← new[] 返回这里</span><br><span class="line">          │ arr[0] = 1      │ 4B</span><br><span class="line">          │ arr[1] = 2      │ 4B</span><br><span class="line">          │ arr[2] = 3      │ 4B</span><br><span class="line">          │ arr[3] = 4      │ 4B</span><br><span class="line">          │ arr[4] = 5      │ 4B</span><br><span class="line">          │ padding         │ 4B</span><br><span class="line">          └─────────────────┘ +0x30</span><br></pre></td></tr></table></figure>
+
+<h2 id="Delete-的配对问题"><a href="#Delete-的配对问题" class="headerlink" title="Delete[] 的配对问题"></a>Delete[] 的配对问题</h2><p>同样的 <code>delete[]</code>，就会读取 <code>cookie</code>，调整指针，调用多次析构函数再调用 <code>free</code>，<code>free</code> 也会读取头信息，决定释放多大的内存。</p>
+<h3 id="不配对的后果"><a href="#不配对的后果" class="headerlink" title="不配对的后果"></a>不配对的后果</h3><p>当 <code>new[]</code>、<code>delete[]</code> 不配对的时候，会出现如下情况：</p>
+<ul>
+<li><p><strong><code>new[]</code> 配 <code>delete</code></strong>：只调用一次析构函数，并且不调整指针（它多申请了 <code>cookie</code>，调用 <code>free</code> 的时候要移动回去），会出现未定义行为（页面回收了就 <code>segment fault</code>，没回收就堆损坏等）。</p>
+</li>
+<li><p><strong><code>new</code> 配 <code>delete[]</code></strong>：读取 <code>p-8</code> 位置的垃圾值当作元素个数 <code>n</code>，尝试调用 <code>n</code> 次析构函数（可能是天文数字导致越界访问），然后调用 <code>free(p-8)</code> 传入错误地址，会出现未定义行为（段错误、堆损坏、无限循环调用析构等）。</p>
+</li>
+</ul>
+<h3 id="为什么有时能正常工作"><a href="#为什么有时能正常工作" class="headerlink" title="为什么有时能正常工作"></a>为什么有时能正常工作</h3><p>那么为什么有时候 <code>new[]</code>、<code>delete[]</code> 不配对，可以正常工作呢？</p>
+<p>之前提到，类有非平凡析构函数时，才会生成 <code>cookie</code>，所以如果是 <code>new int[10]</code>，或者使用默认析构函数的时候，即使使用 <code>new[]</code>，也不会生成 <code>cookie</code>，这样 <code>delete</code> 也不会报错了。</p>
+<p>但是即使能碰巧工作，在编译器层面属于未定义行为，必须避免出现。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io">nv3ifu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io/2025/12/21/c-new/">https://nv3ifu.github.io/2025/12/21/c-new/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/C/">C++</a></div><div class="post-share"><div class="social-share" data-image="/image/image12.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related full-width" href="/2025/12/18/gem5%E5%88%86%E6%94%AF%E9%A2%84%E6%B5%8B%E2%94%80%E2%94%80LocalBP/" title="gem5分支预测──LocalBP"><img class="cover" src="/image/yuce.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">gem5分支预测──LocalBP</div></div><div class="info-2"><div class="info-item-1">LocalBP 是 gem5 中最简单的分支预测算法，代码在 src/cpu/pred/2bit_local.cc 主要组件1. 计数器表 (localCtrs)一个数组，每个元素是一个 2-bit 饱和计数器（可配置）。默认 1024 个表项（可配置），每个表项对应一个或多个分支指令（可能存在 hash 冲突）。这里以默认举例。 2. 2-bit 饱和计数器   状态值 二进制 含义 预测结果    0 00 Strongly Not Taken 不跳转   1 01 Weakly Not Taken 不跳转   2 10 Weakly Taken 跳转   3 11 Strongly Taken 跳转   判断规则：看最高位 (MSB)  MSB &#x3D; 0 (值 0,1) → 预测不跳转 MSB &#x3D; 1 (值 2,3) → 预测跳转  状态转换也很简单，跳转就 +1，没有跳转就 -1： 123456    +1 (taken)      +1 (taken)      +1 (taken)00 ───────────&gt; 01 ───────────&g...</div></div></div></a></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">3</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">7</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">3</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%88%9B%E5%BB%BA%E5%AF%B9%E8%B1%A1%E6%95%B0%E7%BB%84%E7%A4%BA%E4%BE%8B"><span class="toc-number">1.</span> <span class="toc-text">创建对象数组示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80"><span class="toc-number">2.</span> <span class="toc-text">内存布局</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Cookie-%E7%9A%84%E5%8E%9F%E7%90%86"><span class="toc-number">3.</span> <span class="toc-text">Cookie 的原理</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#GCC-%E5%88%A4%E6%96%AD%E6%98%AF%E5%90%A6%E9%9C%80%E8%A6%81-Cookie"><span class="toc-number">3.1.</span> <span class="toc-text">GCC 判断是否需要 Cookie</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Cookie-%E7%9A%84%E5%A4%A7%E5%B0%8F%E8%AE%A1%E7%AE%97"><span class="toc-number">3.2.</span> <span class="toc-text">Cookie 的大小计算</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B1%87%E7%BC%96%E4%BB%A3%E7%A0%81%E5%88%86%E6%9E%90"><span class="toc-number">4.</span> <span class="toc-text">汇编代码分析</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B7%B1%E5%85%A5-operator-new"><span class="toc-number">5.</span> <span class="toc-text">深入 operator new[]</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#operator-new-%E6%BA%90%E7%A0%81"><span class="toc-number">5.1.</span> <span class="toc-text">operator new[] 源码</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#operator-new-%E6%BA%90%E7%A0%81-1"><span class="toc-number">5.2.</span> <span class="toc-text">operator new 源码</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Malloc-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">6.</span> <span class="toc-text">Malloc 的实现</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Windows-vs-Linux-%E7%9A%84%E5%B7%AE%E5%BC%82"><span class="toc-number">6.1.</span> <span class="toc-text">Windows vs Linux 的差异</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Linux-%E5%A0%86%E7%AE%A1%E7%90%86%E5%99%A8"><span class="toc-number">6.2.</span> <span class="toc-text">Linux 堆管理器</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Linux-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%B5%81%E7%A8%8B%E5%9B%BE"><span class="toc-number">7.</span> <span class="toc-text">Linux 内存分配流程图</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Windows-%E5%86%85%E5%AD%98%E5%88%86%E9%85%8D%E6%B5%81%E7%A8%8B"><span class="toc-number">8.</span> <span class="toc-text">Windows 内存分配流程</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Malloc-%E7%9A%84-Chunk-%E7%BB%93%E6%9E%84"><span class="toc-number">9.</span> <span class="toc-text">Malloc 的 Chunk 结构</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#Chunk-%E5%AD%97%E6%AE%B5%E8%AF%A6%E8%A7%A3"><span class="toc-number">9.1.</span> <span class="toc-text">Chunk 字段详解</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#mchunk-prev-size-8-%E5%AD%97%E8%8A%82"><span class="toc-number">9.1.1.</span> <span class="toc-text">mchunk_prev_size (8 字节)</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#mchunk-size-8-%E5%AD%97%E8%8A%82"><span class="toc-number">9.1.2.</span> <span class="toc-text">mchunk_size (8 字节)</span></a></li></ol></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%A0%87%E5%BF%97%E4%BD%8D%E8%AF%B4%E6%98%8E"><span class="toc-number">9.2.</span> <span class="toc-text">标志位说明</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%AE%8C%E6%95%B4%E5%86%85%E5%AD%98%E5%B8%83%E5%B1%80%E7%A4%BA%E4%BE%8B"><span class="toc-number">10.</span> <span class="toc-text">完整内存布局示例</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Delete-%E7%9A%84%E9%85%8D%E5%AF%B9%E9%97%AE%E9%A2%98"><span class="toc-number">11.</span> <span class="toc-text">Delete[] 的配对问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%8D%E9%85%8D%E5%AF%B9%E7%9A%84%E5%90%8E%E6%9E%9C"><span class="toc-number">11.1.</span> <span class="toc-text">不配对的后果</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%9C%89%E6%97%B6%E8%83%BD%E6%AD%A3%E5%B8%B8%E5%B7%A5%E4%BD%9C"><span class="toc-number">11.2.</span> <span class="toc-text">为什么有时能正常工作</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2025/12/21/c-new/" title="C++ new"><img src="/image/image12.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="C++ new"/></a><div class="content"><a class="title" href="/2025/12/21/c-new/" title="C++ new">C++ new</a><time datetime="2025-12-20T16:41:04.000Z" title="Created 2025-12-21 00:41:04">2025-12-21</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/18/gem5%E5%88%86%E6%94%AF%E9%A2%84%E6%B5%8B%E2%94%80%E2%94%80LocalBP/" title="gem5分支预测──LocalBP"><img src="/image/yuce.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="gem5分支预测──LocalBP"/></a><div class="content"><a class="title" href="/2025/12/18/gem5%E5%88%86%E6%94%AF%E9%A2%84%E6%B5%8B%E2%94%80%E2%94%80LocalBP/" title="gem5分支预测──LocalBP">gem5分支预测──LocalBP</a><time datetime="2025-12-17T17:28:32.000Z" title="Created 2025-12-18 01:28:32">2025-12-18</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2025/12/16/%E6%AF%95%E8%AE%BE-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%B2%99%E7%AE%B1%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-1/" title="毕设──基于虚拟机的智能体沙箱的设计与实现(1)"><img src="https://nv3ifu.github.io/image/image.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="毕设──基于虚拟机的智能体沙箱的设计与实现(1)"/></a><div class="content"><a class="title" href="/2025/12/16/%E6%AF%95%E8%AE%BE-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%B2%99%E7%AE%B1%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-1/" title="毕设──基于虚拟机的智能体沙箱的设计与实现(1)">毕设──基于虚拟机的智能体沙箱的设计与实现(1)</a><time datetime="2025-12-15T20:54:07.000Z" title="Created 2025-12-16 04:54:07">2025-12-16</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
