@@ -1,0 +1,268 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Tag: Hardware Detection | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="website">
+<meta property="og:title" content="0X7C00">
+<meta property="og:url" content="https://nv3ifu.github.io/tags/Hardware-Detection/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/nv.jpg">
+<meta property="article:author" content="nv3ifu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/nv.jpg"><script type="application/ld+json"></script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/tags/Hardware-Detection/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Tag: Hardware Detection',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'tag'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="not-home-page" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="page-site-info"><h1 id="site-title">Hardware Detection</h1></div></header><main class="layout" id="content-inner"><div id="tag"><div class="article-sort-title">Tag - Hardware Detection</div><div class="article-sort"><div class="article-sort-item year">2026</div><div class="article-sort-item"><a class="article-sort-item-img" href="/2026/01/23/L1-2-3%E7%BC%93%E5%AD%98%E6%8E%A2%E6%B5%8B/" title="L1/2/3缓存探测"><img src="/image/avg_bandwidth_final.png" alt="L1/2/3缓存探测" onerror="this.onerror=null;this.src='/img/404.jpg'"></a><div class="article-sort-item-info"><div class="article-sort-item-time"><i class="far fa-calendar-alt"></i><time class="post-meta-date-created" datetime="2026-01-23T13:17:56.000Z" title="Created 2026-01-23 21:17:56">2026-01-23</time></div><a class="article-sort-item-title" href="/2026/01/23/L1-2-3%E7%BC%93%E5%AD%98%E6%8E%A2%E6%B5%8B/" title="L1/2/3缓存探测">L1/2/3缓存探测</a></div></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+            <i class="fas fa-folder-open"></i>
+            <span>Categories</span>
+            
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/C-C-%E7%BC%96%E7%A8%8B/"><span class="card-category-list-name">C/C++ 编程</span><span class="card-category-list-count">2</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E5%8D%9A%E5%AE%A2/"><span class="card-category-list-name">博客</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E5%91%A8%E6%8A%A5/"><span class="card-category-list-name">周报</span><span class="card-category-list-count">4</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/"><span class="card-category-list-name">性能优化</span><span class="card-category-list-count">6</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"><span class="card-category-list-name">操作系统</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1/"><span class="card-category-list-name">毕业设计</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/"><span class="card-category-list-name">计算机体系结构</span><span class="card-category-list-count">7</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E9%A1%B9%E7%9B%AE%E5%B1%95%E7%A4%BA/"><span class="card-category-list-name">项目展示</span><span class="card-category-list-count">2</span></a></li>
+          </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>Tags</span></div><div class="card-tag-cloud"><a href="/tags/malloc/" style="font-size: 1.1em; color: #999">malloc</a> <a href="/tags/Hardware-Detection/" style="font-size: 1.1em; color: #999">Hardware Detection</a> <a href="/tags/%E6%BC%94%E7%A4%BA/" style="font-size: 1.18em; color: #999ca1">演示</a> <a href="/tags/%E6%B2%99%E7%AE%B1/" style="font-size: 1.1em; color: #999">沙箱</a> <a href="/tags/Cache/" style="font-size: 1.34em; color: #99a3b0">Cache</a> <a href="/tags/Intel/" style="font-size: 1.18em; color: #999ca1">Intel</a> <a href="/tags/CUDA/" style="font-size: 1.18em; color: #999ca1">CUDA</a> <a href="/tags/%E9%A1%B9%E7%9B%AE/" style="font-size: 1.18em; color: #999ca1">项目</a> <a href="/tags/Performance/" style="font-size: 1.5em; color: #99a9bf">Performance</a> <a href="/tags/Memory/" style="font-size: 1.1em; color: #999">Memory</a> <a href="/tags/Compiler/" style="font-size: 1.1em; color: #999">Compiler</a> <a href="/tags/Memory-Management/" style="font-size: 1.18em; color: #999ca1">Memory Management</a> <a href="/tags/gem5/" style="font-size: 1.1em; color: #999">gem5</a> <a href="/tags/Associativity/" style="font-size: 1.1em; color: #999">Associativity</a> <a href="/tags/GPU/" style="font-size: 1.1em; color: #999">GPU</a> <a href="/tags/Loop-Optimization/" style="font-size: 1.18em; color: #999ca1">Loop Optimization</a> <a href="/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA/" style="font-size: 1.1em; color: #999">虚拟机</a> <a href="/tags/AI/" style="font-size: 1.1em; color: #999">AI</a> <a href="/tags/NRVO/" style="font-size: 1.1em; color: #999">NRVO</a> <a href="/tags/constexpr/" style="font-size: 1.1em; color: #999">constexpr</a> <a href="/tags/Linux-Kernel/" style="font-size: 1.1em; color: #999">Linux Kernel</a> <a href="/tags/RVO/" style="font-size: 1.1em; color: #999">RVO</a> <a href="/tags/ABI/" style="font-size: 1.1em; color: #999">ABI</a> <a href="/tags/%E5%91%A8%E6%8A%A5/" style="font-size: 1.1em; color: #999">周报</a> <a href="/tags/CPython/" style="font-size: 1.1em; color: #999">CPython</a> <a href="/tags/CPU-Architecture/" style="font-size: 1.42em; color: #99a6b7">CPU Architecture</a> <a href="/tags/Optimization/" style="font-size: 1.1em; color: #999">Optimization</a> <a href="/tags/SIMD/" style="font-size: 1.1em; color: #999">SIMD</a> <a href="/tags/C/" style="font-size: 1.26em; color: #999fa8">C++</a> <a href="/tags/MESI/" style="font-size: 1.1em; color: #999">MESI</a> <a href="/tags/Page-Fault/" style="font-size: 1.1em; color: #999">Page Fault</a> <a href="/tags/%E5%AE%89%E5%85%A8/" style="font-size: 1.1em; color: #999">安全</a> <a href="/tags/Branch-Prediction/" style="font-size: 1.1em; color: #999">Branch Prediction</a> <a href="/tags/Deep-Learning/" style="font-size: 1.1em; color: #999">Deep Learning</a> <a href="/tags/GCC/" style="font-size: 1.1em; color: #999">GCC</a> <a href="/tags/%E5%8D%9A%E5%AE%A2/" style="font-size: 1.1em; color: #999">博客</a> <a href="/tags/SSE/" style="font-size: 1.1em; color: #999">SSE</a> <a href="/tags/Windows-Internals/" style="font-size: 1.1em; color: #999">Windows Internals</a> <a href="/tags/AVX/" style="font-size: 1.1em; color: #999">AVX</a> <a href="/tags/Pipeline/" style="font-size: 1.1em; color: #999">Pipeline</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>Archives</span>
+      
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/02/">
+            <span class="card-archive-list-date">
+              February 2026
+            </span>
+            <span class="card-archive-list-count">8</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/01/">
+            <span class="card-archive-list-date">
+              January 2026
+            </span>
+            <span class="card-archive-list-count">17</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/12/">
+            <span class="card-archive-list-date">
+              December 2025
+            </span>
+            <span class="card-archive-list-count">4</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>Website Info</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">Article Count :</div><div class="item-count">29</div></div><div class="webinfo-item"><div class="item-name">Unique Visitors :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Page Views :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Last Update :</div><div class="item-count" id="last-push-date" data-lastPushDate="2026-02-14T12:13:30.495Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

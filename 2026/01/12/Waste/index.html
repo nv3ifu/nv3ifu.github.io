@@ -1,0 +1,360 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Waste | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="本文为学习 Computer Enhance - Waste 的整理。 核心观点提升程序性能只有两条路：  减少要求 CPU 执行的指令总数 调整这些指令，让它们更高效地穿过 CPU  除此之外，别无他法：要么减少数量，要么加快速度。 CPU 正在执行的指令中，存在大量指令，它们所做的事情，与实际程序逻辑毫无关系。  案例：计算 A + B运行在两个较为极端的环境下：  C 语言：编译为原生机器码">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Waste">
+<meta property="og:url" content="https://nv3ifu.github.io/2026/01/12/Waste/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:description" content="本文为学习 Computer Enhance - Waste 的整理。 核心观点提升程序性能只有两条路：  减少要求 CPU 执行的指令总数 调整这些指令，让它们更高效地穿过 CPU  除此之外，别无他法：要么减少数量，要么加快速度。 CPU 正在执行的指令中，存在大量指令，它们所做的事情，与实际程序逻辑毫无关系。  案例：计算 A + B运行在两个较为极端的环境下：  C 语言：编译为原生机器码">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/waste.png">
+<meta property="article:published_time" content="2026-01-12T13:44:55.000Z">
+<meta property="article:modified_time" content="2026-01-12T14:57:53.789Z">
+<meta property="article:author" content="nv3ifu">
+<meta property="article:tag" content="Performance">
+<meta property="article:tag" content="CPython">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/waste.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Waste",
+  "url": "https://nv3ifu.github.io/2026/01/12/Waste/",
+  "image": "https://nv3ifu.github.io/image/waste.png",
+  "datePublished": "2026-01-12T13:44:55.000Z",
+  "dateModified": "2026-01-12T14:57:53.789Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "nv3ifu",
+      "url": "https://nv3ifu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/2026/01/12/Waste/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Waste',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/waste.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a><a class="nav-page-title" href="/"><span class="site-name">Waste</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Waste</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-01-12T13:44:55.000Z" title="Created 2026-01-12 21:44:55">2026-01-12</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-01-12T14:57:53.789Z" title="Updated 2026-01-12 22:57:53">2026-01-12</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>本文为学习 <a target="_blank" rel="noopener" href="https://www.computerenhance.com/p/waste">Computer Enhance - Waste</a> 的整理。</p>
+<h2 id="核心观点"><a href="#核心观点" class="headerlink" title="核心观点"></a>核心观点</h2><p>提升程序性能只有两条路：</p>
+<ol>
+<li><strong>减少要求 CPU 执行的指令总数</strong></li>
+<li><strong>调整这些指令，让它们更高效地穿过 CPU</strong></li>
+</ol>
+<p>除此之外，别无他法：要么减少数量，要么加快速度。</p>
+<p>CPU 正在执行的指令中，存在大量指令，它们所做的事情，与实际程序逻辑毫无关系。</p>
+<hr>
+<h2 id="案例：计算-A-B"><a href="#案例：计算-A-B" class="headerlink" title="案例：计算 A + B"></a>案例：计算 A + B</h2><p>运行在两个较为极端的环境下：</p>
+<ul>
+<li><strong>C 语言</strong>：编译为原生机器码，运行在 CPU 上</li>
+<li><strong>Python</strong>：编译为字节码，运行在 CPython 虚拟机上（没有 JIT）</li>
+</ul>
+<hr>
+<h3 id="C-语言实现"><a href="#C-语言实现" class="headerlink" title="C 语言实现"></a>C 语言实现</h3><p><strong>测试代码：</strong></p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> __declspec(noinline) add(<span class="type">int</span> A, <span class="type">int</span> B)</span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> A + B;</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="meta">#<span class="keyword">pragma</span> optimize(<span class="string">&quot;&quot;</span>, off)</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">main</span><span class="params">(<span class="type">int</span> ArgCount, <span class="type">char</span> **Args)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="keyword">return</span> add(<span class="number">1234</span>, <span class="number">5678</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到为了实现 <code>A + B</code>，只使用了 <strong>一条 ADD 指令</strong>。</p>
+<p><img src="/image/c_add.png" alt="C语言加法汇编"></p>
+<hr>
+<h3 id="Python-实现"><a href="#Python-实现" class="headerlink" title="Python 实现"></a>Python 实现</h3><p><strong>测试代码：</strong></p>
+<figure class="highlight python"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">def</span> <span class="title function_">add</span>(<span class="params">a, b</span>):</span><br><span class="line">    <span class="keyword">return</span> a + b</span><br><span class="line"></span><br><span class="line">c = add(<span class="number">1234</span>, <span class="number">5678</span>)</span><br></pre></td></tr></table></figure>
+<p>Python 字节码跑在 CPython 上，要查看它执行一个加法，我们需要调试 CPython 代码。</p>
+<blockquote>
+<p>这里使用的 CPython 是 3.9 版本，Computer Enhance 使用的是 3.11，有一些差异。</p>
+</blockquote>
+<h4 id="生成的字节码"><a href="#生成的字节码" class="headerlink" title="生成的字节码"></a>生成的字节码</h4><p>首先我们可以看一下它生成的字节码，用编译出来的 Python 可执行文件生成 <code>.pyc</code>，然后查看：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">  1           0 LOAD_CONST               0 (&lt;code object add at 0x00000246739DBBE0, ...&gt;)</span><br><span class="line">              2 LOAD_CONST               1 (&#x27;add&#x27;)</span><br><span class="line">              4 MAKE_FUNCTION            0</span><br><span class="line">              6 STORE_NAME               0 (add)</span><br><span class="line"></span><br><span class="line">  4           8 LOAD_NAME                0 (add)</span><br><span class="line">             10 LOAD_CONST               2 (1234)</span><br><span class="line">             12 LOAD_CONST               3 (5678)</span><br><span class="line">             14 CALL_FUNCTION            2</span><br><span class="line">             16 STORE_NAME               1 (c)</span><br><span class="line">             18 LOAD_CONST               4 (None)</span><br><span class="line">             20 RETURN_VALUE</span><br><span class="line"></span><br><span class="line">Disassembly of &lt;code object add at 0x00000246739DBBE0, ...&gt;:</span><br><span class="line">  2           0 LOAD_FAST                0 (a)</span><br><span class="line">              2 LOAD_FAST                1 (b)</span><br><span class="line">              4 BINARY_ADD</span><br><span class="line">              6 RETURN_VALUE</span><br></pre></td></tr></table></figure>
+<p>可以看到执行加法的是 <code>BINARY_ADD</code> 这一条指令，但是在这一条指令后面，需要多少条机器码呢？我们来调试看一下。</p>
+<h4 id="调试-CPython"><a href="#调试-CPython" class="headerlink" title="调试 CPython"></a>调试 CPython</h4><p>断点设置在 <code>ceval.c</code> 的 1686 行：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">case</span> <span class="title function_">TARGET</span><span class="params">(BINARY_ADD)</span>: &#123;</span><br><span class="line">    PyObject *right = POP();</span><br><span class="line">    PyObject *left = TOP();</span><br><span class="line">    PyObject *sum;</span><br></pre></td></tr></table></figure>
+<p>这里遇到函数就 <code>call</code> 进去，然后复制机器码，直到执行到 <code>DISPATCH()</code>（也就是当前指令执行完毕，取下一条指令的地方），复制所有的机器码。</p>
+<p>因为比较耗时，这里直接贴上 Computer Enhance 的结果，<strong>一共 181 条汇编指令</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br><span class="line">68</span><br><span class="line">69</span><br><span class="line">70</span><br><span class="line">71</span><br><span class="line">72</span><br><span class="line">73</span><br><span class="line">74</span><br><span class="line">75</span><br><span class="line">76</span><br><span class="line">77</span><br><span class="line">78</span><br><span class="line">79</span><br><span class="line">80</span><br><span class="line">81</span><br><span class="line">82</span><br><span class="line">83</span><br><span class="line">84</span><br><span class="line">85</span><br><span class="line">86</span><br><span class="line">87</span><br><span class="line">88</span><br><span class="line">89</span><br><span class="line">90</span><br><span class="line">91</span><br><span class="line">92</span><br><span class="line">93</span><br><span class="line">94</span><br><span class="line">95</span><br><span class="line">96</span><br><span class="line">97</span><br><span class="line">98</span><br><span class="line">99</span><br><span class="line">100</span><br><span class="line">101</span><br><span class="line">102</span><br><span class="line">103</span><br><span class="line">104</span><br><span class="line">105</span><br><span class="line">106</span><br><span class="line">107</span><br><span class="line">108</span><br><span class="line">109</span><br><span class="line">110</span><br><span class="line">111</span><br><span class="line">112</span><br><span class="line">113</span><br><span class="line">114</span><br><span class="line">115</span><br><span class="line">116</span><br><span class="line">117</span><br><span class="line">118</span><br><span class="line">119</span><br><span class="line">120</span><br><span class="line">121</span><br><span class="line">122</span><br><span class="line">123</span><br><span class="line">124</span><br><span class="line">125</span><br><span class="line">126</span><br><span class="line">127</span><br><span class="line">128</span><br><span class="line">129</span><br><span class="line">130</span><br><span class="line">131</span><br><span class="line">132</span><br><span class="line">133</span><br><span class="line">134</span><br><span class="line">135</span><br><span class="line">136</span><br><span class="line">137</span><br><span class="line">138</span><br><span class="line">139</span><br><span class="line">140</span><br><span class="line">141</span><br><span class="line">142</span><br><span class="line">143</span><br><span class="line">144</span><br><span class="line">145</span><br><span class="line">146</span><br><span class="line">147</span><br><span class="line">148</span><br><span class="line">149</span><br><span class="line">150</span><br><span class="line">151</span><br><span class="line">152</span><br><span class="line">153</span><br><span class="line">154</span><br><span class="line">155</span><br><span class="line">156</span><br><span class="line">157</span><br><span class="line">158</span><br><span class="line">159</span><br><span class="line">160</span><br><span class="line">161</span><br><span class="line">162</span><br><span class="line">163</span><br><span class="line">164</span><br><span class="line">165</span><br><span class="line">166</span><br><span class="line">167</span><br><span class="line">168</span><br><span class="line">169</span><br><span class="line">170</span><br><span class="line">171</span><br><span class="line">172</span><br><span class="line">173</span><br><span class="line">174</span><br><span class="line">175</span><br><span class="line">176</span><br><span class="line">177</span><br><span class="line">178</span><br><span class="line">179</span><br><span class="line">180</span><br><span class="line">181</span><br><span class="line">182</span><br><span class="line">183</span><br><span class="line">184</span><br><span class="line">185</span><br><span class="line">186</span><br><span class="line">187</span><br><span class="line">188</span><br><span class="line">189</span><br><span class="line">190</span><br><span class="line">191</span><br><span class="line">192</span><br><span class="line">193</span><br><span class="line">194</span><br><span class="line">195</span><br><span class="line">196</span><br><span class="line">197</span><br><span class="line">198</span><br><span class="line">199</span><br><span class="line">200</span><br><span class="line">201</span><br><span class="line">202</span><br><span class="line">203</span><br><span class="line">204</span><br><span class="line">205</span><br><span class="line">206</span><br><span class="line">207</span><br><span class="line">208</span><br><span class="line">209</span><br><span class="line">210</span><br><span class="line">211</span><br><span class="line">212</span><br><span class="line">213</span><br></pre></td><td class="code"><pre><span class="line">Python 3.11.1 Trace BINARY_OP (add)</span><br><span class="line">~181 ASM instructions</span><br><span class="line"></span><br><span class="line">ceval.c:5544 // TARGET(BINARY_OP) &#123; - 147 hits before stepping</span><br><span class="line"></span><br><span class="line">00007FFDFD04F40F  mov         qword ptr [r11+38h],r14  </span><br><span class="line">00007FFDFD04F413  add         r14,2  </span><br><span class="line">00007FFDFD04F417  jmp         _PyEval_EvalFrameDefault+5872h (07FFDFD04F462h)  </span><br><span class="line"></span><br><span class="line">00007FFDFD04F462  mov         rdi,qword ptr [r12-8]  </span><br><span class="line">00007FFDFD04F467  lea         rax,[__ImageBase (07FFDFCE20000h)]  </span><br><span class="line">00007FFDFD04F46E  mov         rsi,qword ptr [r12-10h]  </span><br><span class="line">00007FFDFD04F473  sub         r12,8  </span><br><span class="line">00007FFDFD04F477  mov         rdx,rdi  </span><br><span class="line">00007FFDFD04F47A  mov         rcx,rsi  </span><br><span class="line">00007FFDFD04F47D  call        qword ptr [rax+r13*8+3E7A70h]  </span><br><span class="line"></span><br><span class="line">    00007FFDFCF07380  mov         qword ptr [rsp+8],rbx  </span><br><span class="line">    00007FFDFCF07385  push        rdi  </span><br><span class="line">    00007FFDFCF07386  sub         rsp,30h  </span><br><span class="line">    00007FFDFCF0738A  xor         r8d,r8d  </span><br><span class="line">    00007FFDFCF0738D  mov         rdi,rdx  </span><br><span class="line">    00007FFDFCF07390  mov         rbx,rcx  </span><br><span class="line">    00007FFDFCF07393  call        binary_op1 (07FFDFCF06C70h)  </span><br><span class="line"></span><br><span class="line">        00007FFDFCF06C70  mov         qword ptr [rsp+10h],rbp  </span><br><span class="line">        00007FFDFCF06C75  mov         qword ptr [rsp+18h],rsi  </span><br><span class="line">        00007FFDFCF06C7A  mov         qword ptr [rsp+20h],rdi  </span><br><span class="line">        00007FFDFCF06C7F  push        r14  </span><br><span class="line">        00007FFDFCF06C81  sub         rsp,20h  </span><br><span class="line">        00007FFDFCF06C85  mov         rsi,rdx  </span><br><span class="line">        00007FFDFCF06C88  movsxd      r9,r8d  </span><br><span class="line">        00007FFDFCF06C8B  mov         rdx,qword ptr [rcx+8]  </span><br><span class="line">        00007FFDFCF06C8F  mov         rbp,rcx  </span><br><span class="line">        00007FFDFCF06C92  mov         rdi,qword ptr [rdx+60h]  </span><br><span class="line">        00007FFDFCF06C96  test        rdi,rdi  </span><br><span class="line">        00007FFDFCF06C99  je          binary_op1+2Fh (07FFDFCF06C9Fh)  </span><br><span class="line">        00007FFDFCF06C9B  mov         rdi,qword ptr [rdi+r9]  </span><br><span class="line">        00007FFDFCF06C9F  mov         rcx,qword ptr [rsi+8]  </span><br><span class="line">        00007FFDFCF06CA3  mov         qword ptr [rsp+30h],rbx  </span><br><span class="line">        00007FFDFCF06CA8  cmp         rcx,rdx  </span><br><span class="line">        00007FFDFCF06CAB  je          binary_op1+55h (07FFDFCF06CC5h)  </span><br><span class="line"></span><br><span class="line">        00007FFDFCF06CC5  xor         ebx,ebx  </span><br><span class="line">        00007FFDFCF06CC7  lea         r14,[_Py_NotImplementedStruct (07FFDFD2E6AF0h)]  </span><br><span class="line">        00007FFDFCF06CCE  test        rdi,rdi  </span><br><span class="line">        00007FFDFCF06CD1  je          binary_op1+0ADh (07FFDFCF06D1Dh)  </span><br><span class="line">        00007FFDFCF06CD3  test        rbx,rbx  </span><br><span class="line">        00007FFDFCF06CD6  je          binary_op1+90h (07FFDFCF06D00h)  </span><br><span class="line"></span><br><span class="line">        00007FFDFCF06D00  mov         rdx,rsi  </span><br><span class="line">        00007FFDFCF06D03  mov         rcx,rbp  </span><br><span class="line">        00007FFDFCF06D06  call        rdi  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF60410  mov         rax,qword ptr [rcx+8]  </span><br><span class="line">            00007FFDFCF60414  test        dword ptr [rax+0A8h],1000000h  </span><br><span class="line">            00007FFDFCF6041E  je          long_add+24h (07FFDFCF60434h)  </span><br><span class="line">            00007FFDFCF60420  mov         rax,qword ptr [rdx+8]  </span><br><span class="line">            00007FFDFCF60424  test        dword ptr [rax+0A8h],1000000h  </span><br><span class="line">            00007FFDFCF6042E  jne         _PyLong_Add (07FFDFCF60380h)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF60380  sub         rsp,28h  </span><br><span class="line">            00007FFDFCF60384  mov         r8,rdx  </span><br><span class="line">            00007FFDFCF60387  mov         rdx,qword ptr [rcx+10h]  </span><br><span class="line">            00007FFDFCF6038B  lea         rax,[rdx+1]  </span><br><span class="line">            00007FFDFCF6038F  cmp         rax,3  </span><br><span class="line">            00007FFDFCF60393  jae         _PyLong_Add+3Eh (07FFDFCF603BEh)  </span><br><span class="line">            00007FFDFCF60395  mov         r9,qword ptr [r8+10h]  </span><br><span class="line">            00007FFDFCF60399  lea         rax,[r9+1]  </span><br><span class="line">            00007FFDFCF6039D  cmp         rax,3  </span><br><span class="line">            00007FFDFCF603A1  jae         _PyLong_Add+3Eh (07FFDFCF603BEh)  </span><br><span class="line">            00007FFDFCF603A3  mov         ecx,dword ptr [rcx+18h]  </span><br><span class="line">            00007FFDFCF603A6  mov         eax,dword ptr [r8+18h]  </span><br><span class="line">            00007FFDFCF603AA  imul        rcx,rdx  </span><br><span class="line">            00007FFDFCF603AE  imul        rax,r9  </span><br><span class="line">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; 00007FFDFCF603B2  add         rcx,rax  ; &lt;-- 真正的加法在这里！</span><br><span class="line">            00007FFDFCF603B5  add         rsp,28h  </span><br><span class="line">            00007FFDFCF603B9  jmp         _PyLong_FromSTwoDigits (07FFDFCF5AF10h)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AF10  push        rdi  </span><br><span class="line">            00007FFDFCF5AF12  sub         rsp,20h  </span><br><span class="line">            00007FFDFCF5AF16  lea         rax,[rcx+5]  </span><br><span class="line">            00007FFDFCF5AF1A  mov         rdi,rcx  </span><br><span class="line">            00007FFDFCF5AF1D  cmp         rax,105h  </span><br><span class="line">            00007FFDFCF5AF23  ja          _PyLong_FromSTwoDigits+2Fh (07FFDFCF5AF3Fh)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AF3F  lea         rax,[rcx+3FFFFFFFh]  </span><br><span class="line">            00007FFDFCF5AF46  cmp         rax,7FFFFFFFh  </span><br><span class="line">            00007FFDFCF5AF4C  jae         _PyLong_FromSTwoDigits+48h (07FFDFCF5AF58h)  </span><br><span class="line">            00007FFDFCF5AF4E  add         rsp,20h  </span><br><span class="line">            00007FFDFCF5AF52  pop         rdi  </span><br><span class="line">            00007FFDFCF5AF53  jmp         _PyLong_FromMedium (07FFDFCF5AE50h)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AE50  mov         qword ptr [rsp+10h],rbx  </span><br><span class="line">            00007FFDFCF5AE55  push        rsi  </span><br><span class="line">            00007FFDFCF5AE56  sub         rsp,20h  </span><br><span class="line">            00007FFDFCF5AE5A  movsxd      rsi,ecx  </span><br><span class="line">            00007FFDFCF5AE5D  mov         edx,20h  </span><br><span class="line">            00007FFDFCF5AE62  mov         rcx,qword ptr [_PyObject (07FFDFD3B8CA8h)]  </span><br><span class="line">            00007FFDFCF5AE69  call        qword ptr [_PyObject+8h (07FFDFD3B8CB0h)]  </span><br><span class="line"></span><br><span class="line">                00007FFDFCF73E60  push        rbx  </span><br><span class="line">                00007FFDFCF73E62  sub         rsp,20h  </span><br><span class="line">                00007FFDFCF73E66  mov         rbx,rdx  </span><br><span class="line">                00007FFDFCF73E69  call        pymalloc_alloc (07FFDFCF73C80h)  </span><br><span class="line"></span><br><span class="line">                    00007FFDFCF73C80  sub         rsp,28h  </span><br><span class="line">                    00007FFDFCF73C84  lea         rax,[rdx-1]  </span><br><span class="line">                    00007FFDFCF73C88  cmp         rax,1FFh  </span><br><span class="line">                    00007FFDFCF73C8E  jbe         pymalloc_alloc+17h (07FFDFCF73C97h)  </span><br><span class="line"></span><br><span class="line">                    00007FFDFCF73C97  mov         qword ptr [rsp+30h],rbx  </span><br><span class="line">                    00007FFDFCF73C9C  mov         qword ptr [rsp+38h],rsi  </span><br><span class="line">                    00007FFDFCF73CA1  mov         qword ptr [rsp+40h],rdi  </span><br><span class="line">                    00007FFDFCF73CA6  lea         edi,[rdx-1]  </span><br><span class="line">                    00007FFDFCF73CA9  shr         edi,4  </span><br><span class="line">                    00007FFDFCF73CAC  mov         qword ptr [rsp+20h],r14  </span><br><span class="line">                    00007FFDFCF73CB1  lea         r14,[__ImageBase (07FFDFCE20000h)]  </span><br><span class="line">                    00007FFDFCF73CB8  lea         eax,[rdi+rdi]  </span><br><span class="line">                    00007FFDFCF73CBB  lea         rsi,[rax*8+4C7120h]  </span><br><span class="line">                    00007FFDFCF73CC3  mov         rdx,qword ptr [rsi+r14]  </span><br><span class="line">                    00007FFDFCF73CC7  mov         rcx,qword ptr [rdx+10h]  </span><br><span class="line">                    00007FFDFCF73CCB  cmp         rdx,rcx  </span><br><span class="line">                    00007FFDFCF73CCE  je          pymalloc_alloc+9Fh (07FFDFCF73D1Fh)  </span><br><span class="line">                    00007FFDFCF73CD0  mov         r9,qword ptr [rdx+8]  </span><br><span class="line">                    00007FFDFCF73CD4  inc         dword ptr [rdx]  </span><br><span class="line">                    00007FFDFCF73CD6  mov         rax,qword ptr [r9]  </span><br><span class="line">                    00007FFDFCF73CD9  mov         qword ptr [rdx+8],rax  </span><br><span class="line">                    00007FFDFCF73CDD  test        rax,rax  </span><br><span class="line">                    00007FFDFCF73CE0  jne         pymalloc_alloc+1C1h (07FFDFCF73E41h)  </span><br><span class="line"></span><br><span class="line">                    00007FFDFCF73E41  mov         r14,qword ptr [rsp+20h]  </span><br><span class="line">                    00007FFDFCF73E46  mov         rax,r9  </span><br><span class="line">                    00007FFDFCF73E49  mov         rdi,qword ptr [rsp+40h]  </span><br><span class="line">                    00007FFDFCF73E4E  mov         rsi,qword ptr [rsp+38h]  </span><br><span class="line">                    00007FFDFCF73E53  mov         rbx,qword ptr [rsp+30h]  </span><br><span class="line">                    00007FFDFCF73E58  add         rsp,28h  </span><br><span class="line">                    00007FFDFCF73E5C  ret  </span><br><span class="line"></span><br><span class="line">                00007FFDFCF73E6E  test        rax,rax  </span><br><span class="line">                00007FFDFCF73E71  jne         _PyObject_Malloc+46h (07FFDFCF73EA6h)  </span><br><span class="line"></span><br><span class="line">                00007FFDFCF73EA6  add         rsp,20h  </span><br><span class="line">                00007FFDFCF73EAA  pop         rbx  </span><br><span class="line">                00007FFDFCF73EAB  ret  </span><br><span class="line">                </span><br><span class="line">            00007FFDFCF5AE6F  mov         rbx,rax  </span><br><span class="line">            00007FFDFCF5AE72  test        rax,rax  </span><br><span class="line">            00007FFDFCF5AE75  jne         _PyLong_FromMedium+4Ah (07FFDFCF5AE9Ah)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AE9A  mov         qword ptr [rsp+30h],rdi  </span><br><span class="line">            00007FFDFCF5AE9F  mov         eax,esi  </span><br><span class="line">            00007FFDFCF5AEA1  cdq  </span><br><span class="line">            00007FFDFCF5AEA2  mov         rcx,rsi  </span><br><span class="line">            00007FFDFCF5AEA5  sar         rcx,3Fh  </span><br><span class="line">            00007FFDFCF5AEA9  mov         edi,eax  </span><br><span class="line">            00007FFDFCF5AEAB  and         rcx,0FFFFFFFFFFFFFFFEh  </span><br><span class="line">            00007FFDFCF5AEAF  lea         rax,[PyLong_Type (07FFDFD2E52E0h)]  </span><br><span class="line">            00007FFDFCF5AEB6  xor         edi,edx  </span><br><span class="line">            00007FFDFCF5AEB8  mov         qword ptr [rbx+8],rax  </span><br><span class="line">            00007FFDFCF5AEBC  inc         rcx  </span><br><span class="line">            00007FFDFCF5AEBF  sub         edi,edx  </span><br><span class="line">            00007FFDFCF5AEC1  mov         qword ptr [rbx+10h],rcx  </span><br><span class="line">            00007FFDFCF5AEC5  test        dword ptr [PyLong_Type+0A8h (07FFDFD2E5388h)],200h  </span><br><span class="line">            00007FFDFCF5AECF  je          _PyLong_FromMedium+88h (07FFDFCF5AED8h)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AED8  cmp         dword ptr [_Py_tracemalloc_config+4h (07FFDFD2E7324h)],0  </span><br><span class="line">            00007FFDFCF5AEDF  je          _PyLong_FromMedium+99h (07FFDFCF5AEE9h)  </span><br><span class="line"></span><br><span class="line">            00007FFDFCF5AEE9  mov         dword ptr [rbx+18h],edi  </span><br><span class="line">            00007FFDFCF5AEEC  mov         rax,rbx  </span><br><span class="line">            00007FFDFCF5AEEF  mov         rdi,qword ptr [rsp+30h]  </span><br><span class="line">            00007FFDFCF5AEF4  mov         qword ptr [rbx],1  </span><br><span class="line">            00007FFDFCF5AEFB  mov         rbx,qword ptr [rsp+38h]  </span><br><span class="line">            00007FFDFCF5AF00  add         rsp,20h  </span><br><span class="line">            00007FFDFCF5AF04  pop         rsi  </span><br><span class="line">            00007FFDFCF5AF05  ret  </span><br><span class="line"></span><br><span class="line">        00007FFDFCF06D08  mov         rcx,rax  </span><br><span class="line">        00007FFDFCF06D0B  cmp         rax,r14  </span><br><span class="line">        00007FFDFCF06D0E  jne         binary_op1+0D9h (07FFDFCF06D49h)  </span><br><span class="line"></span><br><span class="line">        00007FFDFCF06D49  mov         rbx,qword ptr [rsp+30h]  </span><br><span class="line">        00007FFDFCF06D4E  mov         rbp,qword ptr [rsp+38h]  </span><br><span class="line">        00007FFDFCF06D53  mov         rsi,qword ptr [rsp+40h]  </span><br><span class="line">        00007FFDFCF06D58  mov         rdi,qword ptr [rsp+48h]  </span><br><span class="line">        00007FFDFCF06D5D  add         rsp,20h  </span><br><span class="line">        00007FFDFCF06D61  pop         r14  </span><br><span class="line">        00007FFDFCF06D63  ret  </span><br><span class="line"></span><br><span class="line">    00007FFDFCF07398  mov         rcx,rax  </span><br><span class="line">    00007FFDFCF0739B  lea         rax,[_Py_NotImplementedStruct (07FFDFD2E6AF0h)]  </span><br><span class="line">    00007FFDFCF073A2  cmp         rcx,rax  </span><br><span class="line">    00007FFDFCF073A5  je          PyNumber_Add+35h (07FFDFCF073B5h)  </span><br><span class="line">    00007FFDFCF073A7  mov         rax,rcx  </span><br><span class="line">    00007FFDFCF073AA  mov         rbx,qword ptr [rsp+40h]  </span><br><span class="line">    00007FFDFCF073AF  add         rsp,30h  </span><br><span class="line">    00007FFDFCF073B3  pop         rdi  </span><br><span class="line">    00007FFDFCF073B4  ret  </span><br><span class="line"></span><br><span class="line">00007FFDFD04F485  sub         qword ptr [rsi],1  </span><br><span class="line">00007FFDFD04F489  mov         r15,rax  </span><br><span class="line">00007FFDFD04F48C  jne         _PyEval_EvalFrameDefault+58AFh (07FFDFD04F49Fh)  </span><br><span class="line"></span><br><span class="line">00007FFDFD04F49F  sub         qword ptr [rdi],1  </span><br><span class="line">00007FFDFD04F4A3  jne         _PyEval_EvalFrameDefault+58C6h (07FFDFD04F4B6h)  </span><br><span class="line"></span><br><span class="line">00007FFDFD04F4B6  mov         qword ptr [r12-8],r15  </span><br><span class="line">00007FFDFD04F4BB  test        r15,r15  </span><br><span class="line">00007FFDFD04F4BE  mov         r15,qword ptr [rsp+30h]  </span><br><span class="line">00007FFDFD04F4C3  je          _PyEval_EvalFrameDefault+161h (07FFDFD049D51h)  </span><br><span class="line">00007FFDFD04F4C9  add         r14,2  </span><br><span class="line">00007FFDFD04F4CD  jmp         _PyEval_EvalFrameDefault+59FCh (07FFDFD04F5ECh)  </span><br></pre></td></tr></table></figure>
+<p>这里面执行 <code>a + b</code> 的，只有这一条：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt; 00007FFDFCF603B2  add         rcx,rax</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>这就是 <strong>“浪费 (Waste)”</strong>。</p>
+<p>Python 要用 <strong>181 条指令</strong> 去完成本该 <strong>1 条指令</strong> 就能完成的工作。</p>
+<p>这并不是说 Python 不好。Python 有着最接近自然语言的编程体验，在数学、AI 领域等有着不可替代的影响力。只是它的执行方式、JIT 的缺失，注定了它不会成为高性能场景下的选择。</p>
+<p>不止 Python，有 JIT 的 Java，编译为机器码的 Go，执行速度都不及 C/C++，因为它们仍然拥有庞大的运行时，包括 GC、GMP、堆管理等等。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io">nv3ifu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io/2026/01/12/Waste/">https://nv3ifu.github.io/2026/01/12/Waste/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Performance/">Performance</a><a class="post-meta__tags" href="/tags/CPython/">CPython</a></div><div class="post-share"><div class="social-share" data-image="/image/waste.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/01/13/Unrolling-a-loop/" title="Unrolling a Loop"><img class="cover" src="/image/unrolling.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">Unrolling a Loop</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 问题引入有如下代码： 1234567891011typedef unsigned int u32;u32 SingleScalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; ++Index)    &#123;        Sum += Input[Index];    &#125;    return Sum;&#125; 每颗 CPU 在理论上每个时钟周期都能执行一定数量的指令，而我们的工作负载越接近这个数量，就越能发挥这颗 CPU 的全部潜力。 上述代码中，可以认为 加法是工作负载，而 循环是一种”浪费”。下面是上述代码生成的汇编： 1234567891011121314151617SingleScalar:    test    ecx, ecx                ; if (Count == 0)    je      .L...</div></div></div></a><a class="pagination-related  no-desc" href="/2026/01/12/old_blog/" title="远古时期的博客"><img class="cover" src="/image/old_blog.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">远古时期的博客</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/24/Alignment/" title="Alignment"><img class="cover" src="/image/data_alignment_avg_bw.svg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-24</div><div class="info-item-2">Alignment</div></div><div class="info-2"><div class="info-item-1">这篇博客来聊一个比较重要的概念：对齐 (Alignment)。 在 CPU 执行代码的过程中，一个比较严重的性能瓶颈就是 Back-end Memory Bound（后端访存延迟）。 Intel Haswell 访存延迟参考为了有个大概的概念，我们先看下 Intel Haswell 架构的具体访存延迟数据：  数据来源: 7-cpu.com - Haswell配置: Intel i7-4770 (Haswell), 3.4 GHz, RAM 32 GB (PC3-12800 cl11 cr2)   L1 Data cache: 32 KB, 64 B/line, 8-WAY L1 Instruction cache: 32 KB, 64 B/line, 8-WAY L2 cache: 256 KB, 64 B/line, 8-WAY L3 cache: 8 MB, 64 B/line  具体延迟如下：  L1 Data Cache Latency: 4 cycles (pointer simple access) 5 cycles (complex address calcula...</div></div></div></a><a class="pagination-related" href="/2026/01/13/Unrolling-a-loop/" title="Unrolling a Loop"><img class="cover" src="/image/unrolling.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-13</div><div class="info-item-2">Unrolling a Loop</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 问题引入有如下代码： 1234567891011typedef unsigned int u32;u32 SingleScalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; ++Index)    &#123;        Sum += Input[Index];    &#125;    return Sum;&#125; 每颗 CPU 在理论上每个时钟周期都能执行一定数量的指令，而我们的工作负载越接近这个数量，就越能发挥这颗 CPU 的全部潜力。 上述代码中，可以认为 加法是工作负载，而 循环是一种”浪费”。下面是上述代码生成的汇编： 1234567891011121314151617SingleScalar:    test    ecx, ecx                ; if (Count == 0)    je      .L...</div></div></div></a><a class="pagination-related" href="/2026/01/23/cpu%E5%90%8E%E7%AB%AF%E7%AB%AF%E5%8F%A3%E6%8E%A2%E6%B5%8B/" title="CPU 后端端口探测"><img class="cover" src="/image/load_port_analysis.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-23</div><div class="info-item-2">CPU 后端端口探测</div></div><div class="info-2"><div class="info-item-1">CPU 后端流水线在经过取指、解码为 μops、寄存器重命名、分配 ROB 条目后，μops 到达调度器。当数据就绪且执行端口空闲时，它就会被发射到后端的执行单元端口中：  INT Domain (整数域)：ALU 负责加减乘除、位运算、跳转计算 FLOAT/VEC Domain (浮点/向量域)：FPU/SIMD 单元负责浮点运算、AVX/SSE 指令 MEM Domain (访存域 / AGU)：地址生成单元，负责计算 MOV RAX, [RBP+8] 中的内存地址  同时还有并行的 LSU（Load/Store Unit），负责 Load/Store 操作，让 MMU 将 AGU 计算出来的地址翻译为物理地址，接着与 Cache/DRAM 交互，进行地址的读取写入。  超标量与端口瓶颈我们知道现代 CPU 都是 超标量 的，也就是有多条流水线、多执行单元，来实现单核并行。 后端端口的数量是单核并行能力的一个瓶颈，尤其是在计算密集型任务中。 本机配置 i9-12900，分为性能核和能效核，它们分别是：     核心类型 微架构 Load 端口 Store 端口     性能核...</div></div></div></a><a class="pagination-related" href="/2026/01/13/SIMD/" title="Single Instruction, Multiple Data (SIMD)"><img class="cover" src="/image/SIMD.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-13</div><div class="info-item-2">Single Instruction, Multiple Data (SIMD)</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Single Instruction, Multiple Data 的整理。 回顾与引入在前一篇博客中，我们通过 打破指令依赖链，让 CPU 可以并行执行 add 操作，从而提升了性能。 在这篇博客中，我们回到第一种优化方式：通过使用 SIMD 指令来减少指令总数。 SIMD 全称 Single Instruction, Multiple Data（单指令多数据），它的意思正如字面所示：CPU 用一条指令同时处理多份数据。  SIMD 基础常见的 SIMD 指令集包括 SSE、AVX 和 AVX-512。指令宽度依次加倍，分别是 128 bit、256 bit 和 512 bit。宽度决定了一条指令一次性可以计算的数据长度。 现在的家用电脑一般都支持到 AVX2。下图是我的 CPU 数据，可以看到对 SIMD 指令集的支持情况：  寄存器对应关系SIMD 指令会使用专用的寄存器做计算：  SSE (128位): 使用 XMM0 ~ XMM15 AVX (256位): 使用 YMM0 ~ YMM15 XMM0 是 YMM0 的低 1...</div></div></div></a><a class="pagination-related" href="/2026/01/23/L1-2-3%E7%BC%93%E5%AD%98%E6%8E%A2%E6%B5%8B/" title="L1&#x2F;2&#x2F;3缓存探测"><img class="cover" src="/image/avg_bandwidth_final.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-23</div><div class="info-item-2">L1&#x2F;2&#x2F;3缓存探测</div></div><div class="info-2"><div class="info-item-1">又是一篇cpu硬件探测的博客，这篇是探测L1（数据）/2/3缓存。 测试方法采取的方式如下：  每次读取：32 字节（一条 AVX2 指令） 每轮循环：256 字节 测试范围：在指定大小内循环（从1KB到32MB） 总读取量：1GB  核心代码listing_0152_cache_test.asm 1234567891011121314151617181920212223242526272829Read_32x8:    xor r9, r9    mov rax, rdx    align 64.loop:    ; Read 256 bytes    vmovdqu ymm0, [rax]    vmovdqu ymm0, [rax + 0x20]    vmovdqu ymm0, [rax + 0x40]    vmovdqu ymm0, [rax + 0x60]    vmovdqu ymm0, [rax + 0x80]    vmovdqu ymm0, [rax + 0xa0]    vmovdqu ymm0, [rax + 0xc0]    vmovdqu ymm0,...</div></div></div></a><a class="pagination-related" href="/2026/01/13/Break-the-serial-dependency-chain/" title="Break the Serial Dependency Chain"><img class="cover" src="/image/Break.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-13</div><div class="info-item-2">Break the Serial Dependency Chain</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 前情回顾上一篇博客中，我们通过循环展开进行了示例代码的优化，也遇到了串行依赖链的问题。这篇博客就来进一步说明。 之前的优化代码： 123456789101112u32 Unroll4Scalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; Index += 4)    &#123;        Sum += Input[Index];        Sum += Input[Index + 1];        Sum += Input[Index + 2];        Sum += Input[Index + 3];    &#125;    return Sum;&#125;  什么是串行依赖链？每个 add 的第一个操作数始终是同一个累加值 Sum。它既是 add 的源，也是其目的地。 这部分代码是一个 串行依赖链：整个求和过程中的每一次...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A0%B8%E5%BF%83%E8%A7%82%E7%82%B9"><span class="toc-number">1.</span> <span class="toc-text">核心观点</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%A1%88%E4%BE%8B%EF%BC%9A%E8%AE%A1%E7%AE%97-A-B"><span class="toc-number">2.</span> <span class="toc-text">案例：计算 A + B</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#C-%E8%AF%AD%E8%A8%80%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.1.</span> <span class="toc-text">C 语言实现</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Python-%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.</span> <span class="toc-text">Python 实现</span></a><ol class="toc-child"><li class="toc-item toc-level-4"><a class="toc-link" href="#%E7%94%9F%E6%88%90%E7%9A%84%E5%AD%97%E8%8A%82%E7%A0%81"><span class="toc-number">2.2.1.</span> <span class="toc-text">生成的字节码</span></a></li><li class="toc-item toc-level-4"><a class="toc-link" href="#%E8%B0%83%E8%AF%95-CPython"><span class="toc-number">2.2.2.</span> <span class="toc-text">调试 CPython</span></a></li></ol></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">3.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

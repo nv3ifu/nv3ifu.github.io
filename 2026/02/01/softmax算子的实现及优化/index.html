@@ -1,0 +1,421 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Softmax 算子的实现及优化 | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="思路和代码来自 B 站 UP 主 https:&#x2F;&#x2F;space.bilibili.com&#x2F;1822828582 的课程。  Softmax 简介Softmax 的作用是将输入向量映射到一个所有元素值域在 [0, 1] 之间、且总和为 1 的概率分布上。 计算公式给定一个输入向量 $\mathbf{z} &#x3D; [z_1, z_2, …, z_n] \in \mathbb{R}^n$，Softmax 的">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Softmax 算子的实现及优化">
+<meta property="og:url" content="https://nv3ifu.github.io/2026/02/01/softmax%E7%AE%97%E5%AD%90%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8F%8A%E4%BC%98%E5%8C%96/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:description" content="思路和代码来自 B 站 UP 主 https:&#x2F;&#x2F;space.bilibili.com&#x2F;1822828582 的课程。  Softmax 简介Softmax 的作用是将输入向量映射到一个所有元素值域在 [0, 1] 之间、且总和为 1 的概率分布上。 计算公式给定一个输入向量 $\mathbf{z} &#x3D; [z_1, z_2, …, z_n] \in \mathbb{R}^n$，Softmax 的">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/k2_warp3.png">
+<meta property="article:published_time" content="2026-02-01T05:37:41.000Z">
+<meta property="article:modified_time" content="2026-02-01T13:05:24.350Z">
+<meta property="article:author" content="nv3ifu">
+<meta property="article:tag" content="Performance">
+<meta property="article:tag" content="CUDA">
+<meta property="article:tag" content="GPU">
+<meta property="article:tag" content="Deep Learning">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/k2_warp3.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Softmax 算子的实现及优化",
+  "url": "https://nv3ifu.github.io/2026/02/01/softmax%E7%AE%97%E5%AD%90%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8F%8A%E4%BC%98%E5%8C%96/",
+  "image": "https://nv3ifu.github.io/image/k2_warp3.png",
+  "datePublished": "2026-02-01T05:37:41.000Z",
+  "dateModified": "2026-02-01T13:05:24.350Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "nv3ifu",
+      "url": "https://nv3ifu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/2026/02/01/softmax%E7%AE%97%E5%AD%90%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8F%8A%E4%BC%98%E5%8C%96/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Softmax 算子的实现及优化',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/k2_warp3.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a><a class="nav-page-title" href="/"><span class="site-name">Softmax 算子的实现及优化</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Softmax 算子的实现及优化</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-02-01T05:37:41.000Z" title="Created 2026-02-01 13:37:41">2026-02-01</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-02-01T13:05:24.350Z" title="Updated 2026-02-01 21:05:24">2026-02-01</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p>思路和代码来自 B 站 UP 主 <a target="_blank" rel="noopener" href="https://space.bilibili.com/1822828582?spm_id_from=333.1387.follow.user_card.click">https://space.bilibili.com/1822828582</a> 的课程。</p>
+</blockquote>
+<h2 id="Softmax-简介"><a href="#Softmax-简介" class="headerlink" title="Softmax 简介"></a>Softmax 简介</h2><p>Softmax 的作用是将输入向量映射到一个所有元素值域在 <code>[0, 1]</code> 之间、且总和为 1 的<strong>概率分布</strong>上。</p>
+<h3 id="计算公式"><a href="#计算公式" class="headerlink" title="计算公式"></a>计算公式</h3><p>给定一个输入向量 $\mathbf{z} = [z_1, z_2, …, z_n] \in \mathbb{R}^n$，Softmax 的原始公式定义如下：</p>
+<script type="math/tex; mode=display">
+\text{Softmax}(z_i) = \frac{e^{z_i}}{\sum_{j=1}^{n} e^{z_j}}, \quad \forall i = 1, 2, ..., n</script><blockquote>
+<p><strong>注意</strong>：为了避免指数爆炸（Numerical Overflow），在实现时通常会将所有输入减去输入向量中的最大值。</p>
+</blockquote>
+<hr>
+<h2 id="CPU-实现"><a href="#CPU-实现" class="headerlink" title="CPU 实现"></a>CPU 实现</h2><p>CPU 版本是最基础的串行实现，每个大循环处理一行数据，主要分三个步骤：</p>
+<ol>
+<li><strong>求最大值</strong>：遍历当前行，找到最大值 <code>maxval</code>。</li>
+<li><strong>计算指数和求和</strong>：对每一项减去最大值后求指数 <code>expf()</code>，同时累加求和 <code>sum</code>，结果保存在输出数组中。</li>
+<li><strong>归一化</strong>：对输出数组中的每一项除以 <code>sum</code>。</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function"><span class="type">void</span> <span class="title">softmax_forward_cpu</span><span class="params">(<span class="type">float</span> *out, <span class="type">const</span> <span class="type">float</span> *inp, <span class="type">int</span> N, <span class="type">int</span> C)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">0</span>; i &lt; N; i++) &#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> *inp_row = inp + i * C;</span><br><span class="line">    <span class="type">float</span> *out_row = out + i * C;</span><br><span class="line"></span><br><span class="line">    <span class="type">float</span> maxval = -INFINITY;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (inp_row[j] &gt; maxval) &#123;</span><br><span class="line">        maxval = inp_row[j];</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">float</span> sum = <span class="number">0.f</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      out_row[j] = <span class="built_in">expf</span>(inp_row[j] - maxval);</span><br><span class="line">      sum += out_row[j];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">float</span> norm = <span class="number">1.f</span> / sum;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      out_row[j] *= norm;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>可以看到它是完全<strong>串行</strong>的，循环中存在依赖链。</p>
+<hr>
+<h2 id="CUDA-Kernel-1：朴素版本"><a href="#CUDA-Kernel-1：朴素版本" class="headerlink" title="CUDA Kernel 1：朴素版本"></a>CUDA Kernel 1：朴素版本</h2><p>最大的变化是每一行之间的操作变成<strong>并行</strong>的了。通过 <code>if (i &lt; N)</code> 判断，一共有 N 个线程，每个线程负责处理一行。内存使用 <code>cudaMalloc</code> 申请，位于<strong>显存 (Global Memory)</strong> 中。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">softmax_forward_kernel1</span><span class="params">(<span class="type">float</span> *out, <span class="type">const</span> <span class="type">float</span> *inp, <span class="type">int</span> N, <span class="type">int</span> C)</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> i = blockIdx.x * blockDim.x + threadIdx.x;</span><br><span class="line">  <span class="keyword">if</span> (i &lt; N) &#123;</span><br><span class="line">    <span class="type">const</span> <span class="type">float</span> *inp_row = inp + i * C;</span><br><span class="line">    <span class="type">float</span> *out_row = out + i * C;</span><br><span class="line"></span><br><span class="line">    <span class="type">float</span> maxval = -INFINITY;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      <span class="keyword">if</span> (inp_row[j] &gt; maxval) &#123;</span><br><span class="line">        maxval = inp_row[j];</span><br><span class="line">      &#125;</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="type">float</span> sum = <span class="number">0.f</span>;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      out_row[j] = <span class="built_in">expf</span>(inp_row[j] - maxval);</span><br><span class="line">      sum += out_row[j];</span><br><span class="line">    &#125;</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> j = <span class="number">0</span>; j &lt; C; j++) &#123;</span><br><span class="line">      out_row[j] /= (<span class="type">float</span>)sum;</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="性能分析"><a href="#性能分析" class="headerlink" title="性能分析"></a>性能分析</h3><p>在 Nsight Compute 中可以看到它的<strong>吞吐率非常低</strong>。原因还是并行度太低了——只有不同行之间的并行，一行数据仍然使用一个线程串行处理。</p>
+<p><img src="/image/k1.png" alt="Kernel 1 性能分析"></p>
+<hr>
+<h2 id="CUDA-Kernel-2：共享内存-Block-规约"><a href="#CUDA-Kernel-2：共享内存-Block-规约" class="headerlink" title="CUDA Kernel 2：共享内存 + Block 规约"></a>CUDA Kernel 2：共享内存 + Block 规约</h2><p><strong>我们为每一行数据仅分配了一个线程进行处理，其中一个线程串行处理一行，这导致了在输入张量第二维度上的并行度严重不足。</strong></p>
+<p>优化思路有三个：</p>
+<ol>
+<li><strong>线程粗化 (Thread Coarsening)</strong>：每个线程处理多个元素。</li>
+<li><strong>并行规约 (Parallel Reduction)</strong>：使用共享内存进行块内规约。</li>
+<li><strong>使用片上共享内存 (Shared Memory)</strong>：减少对全局显存的访问。</li>
+</ol>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">softmax_forward_kernel2</span><span class="params">(<span class="type">float</span> *out, <span class="type">const</span> <span class="type">float</span> *inp, <span class="type">int</span> N, <span class="type">int</span> C)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">extern</span> __shared__ <span class="type">float</span> shared[];</span><br><span class="line">  <span class="type">int</span> idx = blockIdx.x;   <span class="comment">// ranges [0, N)</span></span><br><span class="line">  <span class="type">int</span> tid = threadIdx.x;  <span class="comment">// ranges [0, block_size)</span></span><br><span class="line">  <span class="type">int</span> block_size = blockDim.x;</span><br><span class="line">  <span class="type">const</span> <span class="type">float</span> *x = inp + idx * C;  <span class="comment">// idx-th row of inp</span></span><br><span class="line">  </span><br><span class="line">  <span class="comment">// Thread coarsening: 每个线程以 block_size 为步长处理多个元素</span></span><br><span class="line">  <span class="type">float</span> maxval = -INFINITY;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += block_size) &#123;</span><br><span class="line">    maxval = <span class="built_in">fmaxf</span>(maxval, x[i]);</span><br><span class="line">  &#125;</span><br><span class="line">  shared[tid] = maxval;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 并行规约求最大值</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> stride = block_size / <span class="number">2</span>; stride &gt;= <span class="number">1</span>; stride /= <span class="number">2</span>) &#123;</span><br><span class="line">    __syncthreads();</span><br><span class="line">    <span class="keyword">if</span> (tid &lt; stride) &#123;</span><br><span class="line">      shared[tid] = <span class="built_in">fmaxf</span>(shared[tid], shared[tid + stride]);</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  <span class="type">float</span> offset = shared[<span class="number">0</span>];</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 计算 exp 并写入全局内存</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += block_size) &#123;</span><br><span class="line">    out[idx * C + i] = <span class="built_in">expf</span>(x[i] - offset);</span><br><span class="line">  &#125;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 线程粗化求和</span></span><br><span class="line">  x = out + idx * C;</span><br><span class="line">  <span class="type">float</span> sumval = <span class="number">0.0f</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += block_size) &#123;</span><br><span class="line">    sumval += x[i];</span><br><span class="line">  &#125;</span><br><span class="line">  shared[tid] = sumval;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 并行规约求和</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> stride = block_size / <span class="number">2</span>; stride &gt;= <span class="number">1</span>; stride /= <span class="number">2</span>) &#123;</span><br><span class="line">    __syncthreads();</span><br><span class="line">    <span class="keyword">if</span> (tid &lt; stride) &#123;</span><br><span class="line">      shared[tid] += shared[tid + stride];</span><br><span class="line">    &#125;</span><br><span class="line">  &#125;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  <span class="type">float</span> sum = shared[<span class="number">0</span>];</span><br><span class="line">  </span><br><span class="line">  <span class="comment">// 归一化</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += block_size) &#123;</span><br><span class="line">    out[idx * C + i] = x[i] / sum;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<h3 id="性能分析-1"><a href="#性能分析-1" class="headerlink" title="性能分析"></a>性能分析</h3><p>在 Nsight Compute 中可以看到<strong>大幅提升</strong>：</p>
+<p><img src="/image/k2.png" alt="Kernel 2 性能分析"></p>
+<p>然而，下图显示每周期平均只有 <strong>0.34 个 warp 具备执行条件</strong>，这表明大部分 warp 都因各种原因被阻塞，无法及时获得执行机会。</p>
+<p><img src="/image/k2_warp.png" alt="Warp Stall 分析"></p>
+<p>原因分析：</p>
+<blockquote>
+<p><em>“On average, each warp of this workload spends 48.7 cycles being stalled waiting for a scoreboard dependency on a <strong>L1TEX (local, global, surface, texture) operation</strong>. This stall type represents about <strong>88.0%</strong> of the total average of 55.3 cycles between issuing two instructions.”</em></p>
+</blockquote>
+<p>主要是<strong>全局显存的读取操作</strong>造成的等待：</p>
+<p><img src="/image/k2_wrap2.png" alt="Warp Stall 详细原因"></p>
+<p>通过汇编指令分析：右侧的 <strong>Warp Stall Sampling</strong> 显示第 73 行有一个巨大的长条（14.82%）。这表示 GPU 的采样器发现有大量的 Warp 就停在这行指令上。</p>
+<p>这行指令是比较 <code>R4</code> 和 <code>R3</code> 的值。它必须等 <code>R4</code> 准备好才能执行。而 <code>R4</code> 来自第 <strong>63 行</strong>的 <code>LDG.E R4, [R4.64]</code>：</p>
+<ul>
+<li><strong><code>LDG</code></strong> = <strong>L</strong>oa<strong>D</strong> <strong>G</strong>lobal，这是标准的全局内存读取指令。</li>
+<li>它对应 C++ 代码中的 <code>x[i]</code> 读取操作。</li>
+<li>显存离核心很远，可能有<strong>几百个时钟周期的延迟</strong>。</li>
+</ul>
+<p><img src="/image/k2_warp3.png" alt="汇编指令分析"></p>
+<hr>
+<h2 id="CUDA-Kernel-3：Warp-Shuffle（仅-32-线程）"><a href="#CUDA-Kernel-3：Warp-Shuffle（仅-32-线程）" class="headerlink" title="CUDA Kernel 3：Warp Shuffle（仅 32 线程）"></a>CUDA Kernel 3：Warp Shuffle（仅 32 线程）</h2><p>核心改进是用 <strong>Warp Shuffle 指令</strong>替换了共享内存通信。</p>
+<p>但 Shuffle 指令只能在<strong>一个 Warp (32 线程)</strong> 内起作用，Thread Block 大小不能超过 32，这大大限制了线程块内部更大的并行潜力。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">softmax_forward_kernel3</span><span class="params">(<span class="type">float</span> *out, <span class="type">const</span> <span class="type">float</span> *inp, <span class="type">int</span> N, <span class="type">int</span> C)</span> </span>&#123;</span><br><span class="line">  <span class="type">int</span> idx = blockIdx.x;</span><br><span class="line">  <span class="type">int</span> tid = threadIdx.x;</span><br><span class="line">  <span class="type">const</span> <span class="type">float</span> *x = inp + idx * C;</span><br><span class="line"></span><br><span class="line">  <span class="type">float</span> maxval = -INFINITY;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    maxval = <span class="built_in">fmaxf</span>(maxval, x[i]);</span><br><span class="line">  &#125;</span><br><span class="line">  maxval = <span class="built_in">warpReduceMax</span>(maxval);</span><br><span class="line"></span><br><span class="line">  <span class="type">float</span> offset = __shfl_sync(<span class="number">0xFFFFFFFF</span>, maxval, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    out[idx * C + i] = <span class="built_in">expf</span>(x[i] - offset);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  x = out + idx * C;</span><br><span class="line">  <span class="type">float</span> sumval = <span class="number">0.0f</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    sumval += x[i];</span><br><span class="line">  &#125;</span><br><span class="line">  sumval = <span class="built_in">warpReduceSum</span>(sumval);</span><br><span class="line"></span><br><span class="line">  <span class="type">float</span> sum = __shfl_sync(<span class="number">0xFFFFFFFF</span>, sumval, <span class="number">0</span>);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    out[idx * C + i] = x[i] / sum;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="CUDA-Kernel-4：Warp-Shuffle-跨-Warp-规约"><a href="#CUDA-Kernel-4：Warp-Shuffle-跨-Warp-规约" class="headerlink" title="CUDA Kernel 4：Warp Shuffle + 跨 Warp 规约"></a>CUDA Kernel 4：Warp Shuffle + 跨 Warp 规约</h2><p>核心差异：</p>
+<ul>
+<li><strong>Kernel 2</strong>：每个线程都把自己计算出来的局部最大值写入共享内存，然后进行规约。</li>
+<li><strong>Kernel 4</strong>：先使用 <strong>Warp Shuffle</strong> 在 Warp 内计算出最大值和求和结果，然后再将<strong>一个 Warp 的结果</strong>写入共享内存进行跨 Warp 规约。</li>
+</ul>
+<p>这减少了共享内存的使用，转而使用 Warp 内的<strong>寄存器通信</strong>。共享内存只需要存储”每个 Warp 的结果”，而不是”每个线程的结果”。因为最大值（Max）和求和（Sum）各需要一份，所以共享内存大小为 <code>2 * warpsPerBlock</code>。</p>
+<figure class="highlight cpp"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br><span class="line">48</span><br><span class="line">49</span><br><span class="line">50</span><br><span class="line">51</span><br><span class="line">52</span><br><span class="line">53</span><br><span class="line">54</span><br><span class="line">55</span><br><span class="line">56</span><br><span class="line">57</span><br><span class="line">58</span><br><span class="line">59</span><br><span class="line">60</span><br><span class="line">61</span><br><span class="line">62</span><br><span class="line">63</span><br><span class="line">64</span><br><span class="line">65</span><br><span class="line">66</span><br><span class="line">67</span><br></pre></td><td class="code"><pre><span class="line"><span class="function">__global__ <span class="type">void</span> <span class="title">softmax_forward_kernel4</span><span class="params">(<span class="type">float</span> *out, <span class="type">const</span> <span class="type">float</span> *inp, <span class="type">int</span> N, <span class="type">int</span> C)</span> </span>&#123;</span><br><span class="line">  <span class="keyword">extern</span> __shared__ <span class="type">float</span> shared[];</span><br><span class="line">  <span class="type">int</span> idx = blockIdx.x;</span><br><span class="line">  <span class="type">int</span> tid = threadIdx.x;</span><br><span class="line">  <span class="type">int</span> warpId = threadIdx.x / <span class="number">32</span>;  <span class="comment">// warp index within a block</span></span><br><span class="line">  <span class="type">int</span> laneId = threadIdx.x % <span class="number">32</span>;  <span class="comment">// thread index within a warp</span></span><br><span class="line">  <span class="type">int</span> warpsPerBlock = blockDim.x / <span class="number">32</span>;</span><br><span class="line"></span><br><span class="line">  <span class="type">float</span> *maxvals = shared;</span><br><span class="line">  <span class="type">float</span> *sumvals = &amp;shared[warpsPerBlock];</span><br><span class="line"></span><br><span class="line">  <span class="type">const</span> <span class="type">float</span> *x = inp + idx * C;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 线程粗化 + Warp 内规约求最大值</span></span><br><span class="line">  <span class="type">float</span> maxval = -INFINITY;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    maxval = <span class="built_in">fmaxf</span>(maxval, x[i]);</span><br><span class="line">  &#125;</span><br><span class="line">  maxval = <span class="built_in">warpReduceMax</span>(maxval);</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 每个 Warp 的 Lane 0 写入共享内存</span></span><br><span class="line">  <span class="keyword">if</span> (laneId == <span class="number">0</span>) maxvals[warpId] = maxval;</span><br><span class="line">  __syncthreads();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 跨 Warp 规约</span></span><br><span class="line">  <span class="keyword">if</span> (tid == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="type">float</span> val = maxvals[tid];</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; warpsPerBlock; i++) &#123;</span><br><span class="line">      val = <span class="built_in">fmaxf</span>(val, maxvals[i]);</span><br><span class="line">    &#125;</span><br><span class="line">    maxvals[<span class="number">0</span>] = val;</span><br><span class="line">  &#125;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  <span class="type">float</span> offset = maxvals[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 计算 exp</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    out[idx * C + i] = <span class="built_in">expf</span>(x[i] - offset);</span><br><span class="line">  &#125;</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 线程粗化 + Warp 内规约求和</span></span><br><span class="line">  x = out + idx * C;</span><br><span class="line">  <span class="type">float</span> sumval = <span class="number">0.0f</span>;</span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    sumval += x[i];</span><br><span class="line">  &#125;</span><br><span class="line">  sumval = <span class="built_in">warpReduceSum</span>(sumval);</span><br><span class="line"></span><br><span class="line">  <span class="keyword">if</span> (laneId == <span class="number">0</span>) sumvals[warpId] = sumval;</span><br><span class="line">  __syncthreads();</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 跨 Warp 规约</span></span><br><span class="line">  <span class="keyword">if</span> (tid == <span class="number">0</span>) &#123;</span><br><span class="line">    <span class="type">float</span> val = sumvals[tid];</span><br><span class="line">    <span class="keyword">for</span> (<span class="type">int</span> i = <span class="number">1</span>; i &lt; warpsPerBlock; ++i) &#123;</span><br><span class="line">      val += sumvals[i];</span><br><span class="line">    &#125;</span><br><span class="line">    sumvals[<span class="number">0</span>] = val;</span><br><span class="line">  &#125;</span><br><span class="line">  __syncthreads();</span><br><span class="line">  <span class="type">float</span> sum = sumvals[<span class="number">0</span>];</span><br><span class="line"></span><br><span class="line">  <span class="comment">// 归一化</span></span><br><span class="line">  <span class="keyword">for</span> (<span class="type">int</span> i = tid; i &lt; C; i += blockDim.x) &#123;</span><br><span class="line">    out[idx * C + i] = x[i] / sum;</span><br><span class="line">  &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="整体性能测试"><a href="#整体性能测试" class="headerlink" title="整体性能测试"></a>整体性能测试</h2><p>测试环境：<code>N=256, C=65536, blockSize=512</code></p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br></pre></td><td class="code"><pre><span class="line">========== CPU Baseline ==========</span><br><span class="line">CPU time: 232.26 ms</span><br><span class="line"></span><br><span class="line">========== GPU Kernels ==========</span><br><span class="line"></span><br><span class="line">--- Kernel 1: Naive (one thread per row) ---</span><br><span class="line">  Average: 65.68 ms</span><br><span class="line">  Speedup vs CPU: 3.54x</span><br><span class="line">  Correctness: PASS</span><br><span class="line"></span><br><span class="line">--- Kernel 2: Shared memory + block reduction ---</span><br><span class="line">  Average: 1.67 ms</span><br><span class="line">  Speedup vs CPU: 138.91x</span><br><span class="line">  Speedup vs Kernel1: 39.28x</span><br><span class="line">  Correctness: PASS</span><br><span class="line"></span><br><span class="line">--- Kernel 3: Warp shuffle (32 threads only) ---</span><br><span class="line">  Average: 3.37 ms</span><br><span class="line">  Speedup vs CPU: 68.88x</span><br><span class="line">  Speedup vs Kernel1: 19.48x</span><br><span class="line">  Correctness: PASS</span><br><span class="line"></span><br><span class="line">--- Kernel 4: Warp shuffle + inter-warp reduction ---</span><br><span class="line">  Average: 1.32 ms</span><br><span class="line">  Speedup vs CPU: 175.87x</span><br><span class="line">  Speedup vs Kernel1: 49.73x</span><br><span class="line">  Correctness: PASS</span><br><span class="line"></span><br><span class="line">========== Performance Summary ==========</span><br><span class="line">CPU:      232.26 ms</span><br><span class="line">Kernel 1: 65.68 ms  (speedup: 3.54x)</span><br><span class="line">Kernel 2: 1.67 ms   (speedup: 138.91x)</span><br><span class="line">Kernel 3: 3.37 ms   (speedup: 68.88x)</span><br><span class="line">Kernel 4: 1.32 ms   (speedup: 175.87x)</span><br><span class="line"></span><br><span class="line">Fastest: Kernel 4 (1.32 ms)</span><br></pre></td></tr></table></figure>
+<hr>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><div class="table-container">
+<table>
+<thead>
+<tr>
+<th style="text-align:left">Kernel</th>
+<th style="text-align:left">优化手段</th>
+<th style="text-align:left">加速比 (vs CPU)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left">Kernel 1</td>
+<td style="text-align:left">朴素并行（行间并行）</td>
+<td style="text-align:left">3.54x</td>
+</tr>
+<tr>
+<td style="text-align:left">Kernel 2</td>
+<td style="text-align:left">共享内存 + Block 规约</td>
+<td style="text-align:left">138.91x</td>
+</tr>
+<tr>
+<td style="text-align:left">Kernel 3</td>
+<td style="text-align:left">Warp Shuffle（仅 32 线程）</td>
+<td style="text-align:left">68.88x</td>
+</tr>
+<tr>
+<td style="text-align:left">Kernel 4</td>
+<td style="text-align:left">Warp Shuffle + 跨 Warp 规约</td>
+<td style="text-align:left"><strong>175.87x</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>Kernel 4</strong> 通过结合 Warp Shuffle 的低延迟通信和跨 Warp 规约，取得了最佳性能。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io">nv3ifu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io/2026/02/01/softmax%E7%AE%97%E5%AD%90%E7%9A%84%E5%AE%9E%E7%8E%B0%E5%8F%8A%E4%BC%98%E5%8C%96/">https://nv3ifu.github.io/2026/02/01/softmax算子的实现及优化/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Performance/">Performance</a><a class="post-meta__tags" href="/tags/CUDA/">CUDA</a><a class="post-meta__tags" href="/tags/GPU/">GPU</a><a class="post-meta__tags" href="/tags/Deep-Learning/">Deep Learning</a></div><div class="post-share"><div class="social-share" data-image="/image/k2_warp3.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/02/02/2026-1-26-2026-2-1-%E5%91%A8%E6%8A%A5/" title="2026.1.26 - 2026.2.1 周报"><img class="cover" src="/image/weekly_report_4.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">2026.1.26 - 2026.2.1 周报</div></div><div class="info-2"><div class="info-item-1">L1 Cache 组相联度探测做了一下 L1 Cache 组相联度探测。使用不同的步长访问内存，制造 L1 Cache 冲突，在特定步长下会大幅下降。 主要原因就是：  特定步长下降是 Cache 冲突，导致 L1 Cache 不够放了，挤到 L2 了。 整体下降是 Data TLB 不够用了，因为到后面步长变大，涉及的页面数变多了。   能用的 Set 数量 = 总 Set 数 / GCD(总 Set 数, stride/64)  stride = 256 的时候 set 只能用到 1/4 stride = 4096 的时候，set 只能用到 1/64，所以在这里到达最低点    Softmax 算子的实现及优化找了一些课程学习了一下 CUDA 编程，主要做了 Softmax 算子的实现及优化。 优化过程为： 1. CPU 实现代码层面完全串行，只有在 CPU 后端没有依赖链的时候有单核内部的微指令级别的并行。 2. GPU Kernel 1 实现基本就是原封不动地搬到了 GPU 上，只不过我们给它设置了 N 个线程块，每个线程块一个线程，用 int i = blockIdx....</div></div></div></a><a class="pagination-related" href="/2026/01/27/%E7%BB%84%E7%9B%B8%E8%BF%9E%E5%BA%A6%E6%8E%A2%E6%B5%8B/" title="L1 Cache 组相联度探测"><img class="cover" src="/image/%E5%9B%BE%E7%89%871.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">L1 Cache 组相联度探测</div></div><div class="info-2"><div class="info-item-1">这篇博客主要介绍一种在已知 L1 Data Cache 大小的情况下，探测其 组相联度 (Associativity) 的方法。 背景其实组相联度通常不需要”探测”，因为现代 CPU 为了支持 VIPT (Virtually Indexed, Physically Tagged)，通常遵循以下公式：  \text{Cache总大小} / \text{组相联度} \leq \text{页大小} (4KB)为了最大化 Cache 容量和 Set 数量，设计时通常取等号。例如，Golden Cove 的 P-Core L1 Data Cache 大小为 48KB。根据公式 $48KB / \text{Ways} = 4KB$，很明显它的组相联度就是 12 路。  关于 VIPT 的详细解释，可以参考我的另一篇博客：Virtually Indexed, Physically Tagged  那么，有没有一种不通过计算，而是通过编写测试代码的方式来探测验证这一结论呢？ 答案是有的。这种方法虽然不能给出精确数值，但能通过性能特征推断出大致范围。 探测原理测试方法的核心思想是：制造 Cache...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/13/SIMD/" title="Single Instruction, Multiple Data (SIMD)"><img class="cover" src="/image/SIMD.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-13</div><div class="info-item-2">Single Instruction, Multiple Data (SIMD)</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Single Instruction, Multiple Data 的整理。 回顾与引入在前一篇博客中，我们通过 打破指令依赖链，让 CPU 可以并行执行 add 操作，从而提升了性能。 在这篇博客中，我们回到第一种优化方式：通过使用 SIMD 指令来减少指令总数。 SIMD 全称 Single Instruction, Multiple Data（单指令多数据），它的意思正如字面所示：CPU 用一条指令同时处理多份数据。  SIMD 基础常见的 SIMD 指令集包括 SSE、AVX 和 AVX-512。指令宽度依次加倍，分别是 128 bit、256 bit 和 512 bit。宽度决定了一条指令一次性可以计算的数据长度。 现在的家用电脑一般都支持到 AVX2。下图是我的 CPU 数据，可以看到对 SIMD 指令集的支持情况：  寄存器对应关系SIMD 指令会使用专用的寄存器做计算：  SSE (128位): 使用 XMM0 ~ XMM15 AVX (256位): 使用 YMM0 ~ YMM15 XMM0 是 YMM0 的低 1...</div></div></div></a><a class="pagination-related" href="/2026/01/23/cpu%E5%90%8E%E7%AB%AF%E7%AB%AF%E5%8F%A3%E6%8E%A2%E6%B5%8B/" title="CPU 后端端口探测"><img class="cover" src="/image/load_port_analysis.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-23</div><div class="info-item-2">CPU 后端端口探测</div></div><div class="info-2"><div class="info-item-1">CPU 后端流水线在经过取指、解码为 μops、寄存器重命名、分配 ROB 条目后，μops 到达调度器。当数据就绪且执行端口空闲时，它就会被发射到后端的执行单元端口中：  INT Domain (整数域)：ALU 负责加减乘除、位运算、跳转计算 FLOAT/VEC Domain (浮点/向量域)：FPU/SIMD 单元负责浮点运算、AVX/SSE 指令 MEM Domain (访存域 / AGU)：地址生成单元，负责计算 MOV RAX, [RBP+8] 中的内存地址  同时还有并行的 LSU（Load/Store Unit），负责 Load/Store 操作，让 MMU 将 AGU 计算出来的地址翻译为物理地址，接着与 Cache/DRAM 交互，进行地址的读取写入。  超标量与端口瓶颈我们知道现代 CPU 都是 超标量 的，也就是有多条流水线、多执行单元，来实现单核并行。 后端端口的数量是单核并行能力的一个瓶颈，尤其是在计算密集型任务中。 本机配置 i9-12900，分为性能核和能效核，它们分别是：     核心类型 微架构 Load 端口 Store 端口     性能核...</div></div></div></a><a class="pagination-related" href="/2026/01/24/Alignment/" title="Alignment"><img class="cover" src="/image/data_alignment_avg_bw.svg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-24</div><div class="info-item-2">Alignment</div></div><div class="info-2"><div class="info-item-1">这篇博客来聊一个比较重要的概念：对齐 (Alignment)。 在 CPU 执行代码的过程中，一个比较严重的性能瓶颈就是 Back-end Memory Bound（后端访存延迟）。 Intel Haswell 访存延迟参考为了有个大概的概念，我们先看下 Intel Haswell 架构的具体访存延迟数据：  数据来源: 7-cpu.com - Haswell配置: Intel i7-4770 (Haswell), 3.4 GHz, RAM 32 GB (PC3-12800 cl11 cr2)   L1 Data cache: 32 KB, 64 B/line, 8-WAY L1 Instruction cache: 32 KB, 64 B/line, 8-WAY L2 cache: 256 KB, 64 B/line, 8-WAY L3 cache: 8 MB, 64 B/line  具体延迟如下：  L1 Data Cache Latency: 4 cycles (pointer simple access) 5 cycles (complex address calcula...</div></div></div></a><a class="pagination-related" href="/2026/01/27/%E7%BB%84%E7%9B%B8%E8%BF%9E%E5%BA%A6%E6%8E%A2%E6%B5%8B/" title="L1 Cache 组相联度探测"><img class="cover" src="/image/%E5%9B%BE%E7%89%871.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-27</div><div class="info-item-2">L1 Cache 组相联度探测</div></div><div class="info-2"><div class="info-item-1">这篇博客主要介绍一种在已知 L1 Data Cache 大小的情况下，探测其 组相联度 (Associativity) 的方法。 背景其实组相联度通常不需要”探测”，因为现代 CPU 为了支持 VIPT (Virtually Indexed, Physically Tagged)，通常遵循以下公式：  \text{Cache总大小} / \text{组相联度} \leq \text{页大小} (4KB)为了最大化 Cache 容量和 Set 数量，设计时通常取等号。例如，Golden Cove 的 P-Core L1 Data Cache 大小为 48KB。根据公式 $48KB / \text{Ways} = 4KB$，很明显它的组相联度就是 12 路。  关于 VIPT 的详细解释，可以参考我的另一篇博客：Virtually Indexed, Physically Tagged  那么，有没有一种不通过计算，而是通过编写测试代码的方式来探测验证这一结论呢？ 答案是有的。这种方法虽然不能给出精确数值，但能通过性能特征推断出大致范围。 探测原理测试方法的核心思想是：制造 Cache...</div></div></div></a><a class="pagination-related" href="/2026/01/13/Unrolling-a-loop/" title="Unrolling a Loop"><img class="cover" src="/image/unrolling.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-13</div><div class="info-item-2">Unrolling a Loop</div></div><div class="info-2"><div class="info-item-1">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 问题引入有如下代码： 1234567891011typedef unsigned int u32;u32 SingleScalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; ++Index)    &#123;        Sum += Input[Index];    &#125;    return Sum;&#125; 每颗 CPU 在理论上每个时钟周期都能执行一定数量的指令，而我们的工作负载越接近这个数量，就越能发挥这颗 CPU 的全部潜力。 上述代码中，可以认为 加法是工作负载，而 循环是一种”浪费”。下面是上述代码生成的汇编： 1234567891011121314151617SingleScalar:    test    ecx, ecx                ; if (Count == 0)    je      .L...</div></div></div></a><a class="pagination-related" href="/2026/02/02/2026-1-26-2026-2-1-%E5%91%A8%E6%8A%A5/" title="2026.1.26 - 2026.2.1 周报"><img class="cover" src="/image/weekly_report_4.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-02</div><div class="info-item-2">2026.1.26 - 2026.2.1 周报</div></div><div class="info-2"><div class="info-item-1">L1 Cache 组相联度探测做了一下 L1 Cache 组相联度探测。使用不同的步长访问内存，制造 L1 Cache 冲突，在特定步长下会大幅下降。 主要原因就是：  特定步长下降是 Cache 冲突，导致 L1 Cache 不够放了，挤到 L2 了。 整体下降是 Data TLB 不够用了，因为到后面步长变大，涉及的页面数变多了。   能用的 Set 数量 = 总 Set 数 / GCD(总 Set 数, stride/64)  stride = 256 的时候 set 只能用到 1/4 stride = 4096 的时候，set 只能用到 1/64，所以在这里到达最低点    Softmax 算子的实现及优化找了一些课程学习了一下 CUDA 编程，主要做了 Softmax 算子的实现及优化。 优化过程为： 1. CPU 实现代码层面完全串行，只有在 CPU 后端没有依赖链的时候有单核内部的微指令级别的并行。 2. GPU Kernel 1 实现基本就是原封不动地搬到了 GPU 上，只不过我们给它设置了 N 个线程块，每个线程块一个线程，用 int i = blockIdx....</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#Softmax-%E7%AE%80%E4%BB%8B"><span class="toc-number">1.</span> <span class="toc-text">Softmax 简介</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%AE%A1%E7%AE%97%E5%85%AC%E5%BC%8F"><span class="toc-number">1.1.</span> <span class="toc-text">计算公式</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CPU-%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.</span> <span class="toc-text">CPU 实现</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CUDA-Kernel-1%EF%BC%9A%E6%9C%B4%E7%B4%A0%E7%89%88%E6%9C%AC"><span class="toc-number">3.</span> <span class="toc-text">CUDA Kernel 1：朴素版本</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90"><span class="toc-number">3.1.</span> <span class="toc-text">性能分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CUDA-Kernel-2%EF%BC%9A%E5%85%B1%E4%BA%AB%E5%86%85%E5%AD%98-Block-%E8%A7%84%E7%BA%A6"><span class="toc-number">4.</span> <span class="toc-text">CUDA Kernel 2：共享内存 + Block 规约</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%80%A7%E8%83%BD%E5%88%86%E6%9E%90-1"><span class="toc-number">4.1.</span> <span class="toc-text">性能分析</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CUDA-Kernel-3%EF%BC%9AWarp-Shuffle%EF%BC%88%E4%BB%85-32-%E7%BA%BF%E7%A8%8B%EF%BC%89"><span class="toc-number">5.</span> <span class="toc-text">CUDA Kernel 3：Warp Shuffle（仅 32 线程）</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#CUDA-Kernel-4%EF%BC%9AWarp-Shuffle-%E8%B7%A8-Warp-%E8%A7%84%E7%BA%A6"><span class="toc-number">6.</span> <span class="toc-text">CUDA Kernel 4：Warp Shuffle + 跨 Warp 规约</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%95%B4%E4%BD%93%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">7.</span> <span class="toc-text">整体性能测试</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%80%BB%E7%BB%93"><span class="toc-number">8.</span> <span class="toc-text">总结</span></a></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

@@ -1,0 +1,883 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Page Fault Clustering | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="注意：本文中 Windows 平台的 PageFaultCount 使用 GetProcessMemoryInfo 获取，该字段并不是 Page Fault 进入内核的次数，而是映射的页面数。详见 WRK 源码。 在 WRK 中，匿名内存并不会触发聚类，只有文件映射会触发。但在 Win11 10.0.26100 Build 26100 上观测到了匿名内存的类似机制，猜测新版本做了实现。  引言我">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Page Fault Clustering">
+<meta property="og:url" content="https://nv3ifu.github.io/2026/01/21/Page-Fault-Clustering/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:description" content="注意：本文中 Windows 平台的 PageFaultCount 使用 GetProcessMemoryInfo 获取，该字段并不是 Page Fault 进入内核的次数，而是映射的页面数。详见 WRK 源码。 在 WRK 中，匿名内存并不会触发聚类，只有文件映射会触发。但在 Win11 10.0.26100 Build 26100 上观测到了匿名内存的类似机制，猜测新版本做了实现。  引言我">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/fault_data_2048_zoom.svg">
+<meta property="article:published_time" content="2026-01-20T16:04:55.000Z">
+<meta property="article:modified_time" content="2026-01-20T19:30:43.271Z">
+<meta property="article:author" content="nv3ifu">
+<meta property="article:tag" content="Memory Management">
+<meta property="article:tag" content="Page Fault">
+<meta property="article:tag" content="Windows Internals">
+<meta property="article:tag" content="Linux Kernel">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/fault_data_2048_zoom.svg"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Page Fault Clustering",
+  "url": "https://nv3ifu.github.io/2026/01/21/Page-Fault-Clustering/",
+  "image": "https://nv3ifu.github.io/image/fault_data_2048_zoom.svg",
+  "datePublished": "2026-01-20T16:04:55.000Z",
+  "dateModified": "2026-01-20T19:30:43.271Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "nv3ifu",
+      "url": "https://nv3ifu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/2026/01/21/Page-Fault-Clustering/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Page Fault Clustering',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/fault_data_2048_zoom.svg);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a><a class="nav-page-title" href="/"><span class="site-name">Page Fault Clustering</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Page Fault Clustering</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2026-01-20T16:04:55.000Z" title="Created 2026-01-21 00:04:55">2026-01-21</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-01-20T19:30:43.271Z" title="Updated 2026-01-21 03:30:43">2026-01-21</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/">操作系统</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><blockquote>
+<p><strong>注意</strong>：本文中 Windows 平台的 <code>PageFaultCount</code> 使用 <code>GetProcessMemoryInfo</code> 获取，该字段并不是 Page Fault 进入内核的次数，而是映射的页面数。详见 WRK 源码。</p>
+<p>在 WRK 中，匿名内存并不会触发聚类，只有文件映射会触发。但在 Win11 10.0.26100 Build 26100 上观测到了匿名内存的类似机制，猜测新版本做了实现。</p>
+</blockquote>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>我们都知道，不管是在 Linux 还是在 Windows，使用 <code>mmap</code> 或 <code>VirtualAlloc</code> 返回的内存只是在 VMA/VAD 上做了记录，并没有被真正分配出来——没有从管理物理页面的结构体中把物理页面拿出来，没有把这个物理页面的 PFN 挂在虚拟地址对应的 PTE 上。这些操作被推迟到 <strong>访问这块内存的时候</strong> 进行。</p>
+<p>但我们思考一个问题：现在的操作系统/编程语言有着各种操作来避免频繁进入内核。例如：</p>
+<ul>
+<li>操作系统、语言 (Go) 的 <strong>堆管理器</strong>：后端大量从操作系统批发，切分给前端使用</li>
+<li><code>USER_SHARED_DATA</code>：同一个物理内存映射在内核空间和用户空间，使得可以不进入内核就获取系统信息</li>
+</ul>
+<p>我们可以推测出 <strong>进入内核的开销并不小</strong>。那么在缺页异常中呢？是否会有一种机制，使得用户访问一块地址后，为了减少进入内核的次数，<strong>一次性映射多个页面</strong>？</p>
+<p>答案是 <strong>有的</strong>，并且在不同的操作系统中有着不同的实现。</p>
+<hr>
+<h2 id="测试代码"><a href="#测试代码" class="headerlink" title="测试代码"></a>测试代码</h2><p>测试代码位于 <a target="_blank" rel="noopener" href="https://github.com/cmuratori/computer_enhance">computer_enhance</a> 的 <code>listing_108</code> 和 <code>listing_0112</code> 到 <code>listing_0115</code>。</p>
+<h3 id="代码功能总结"><a href="#代码功能总结" class="headerlink" title="代码功能总结"></a>代码功能总结</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>功能</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>listing_0112</code></td>
+<td><strong>正向触碰</strong>：从头到尾（0 → End）一页一页写入，观察缺页分配行为</td>
+</tr>
+<tr>
+<td><code>listing_0113</code></td>
+<td><strong>反向触碰</strong>：从尾到头（End → 0）倒着写，观察预映射是否失效</td>
+</tr>
+<tr>
+<td><code>listing_0114</code></td>
+<td><strong>反向测试封装</strong>：将反向写入封装成测试函数，供性能测试器调用</td>
+</tr>
+<tr>
+<td><code>listing_0115</code></td>
+<td><strong>全面性能测试</strong>：对比正向和反向写入的速度</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h3 id="ReadOSPageFaultCount-的实现"><a href="#ReadOSPageFaultCount-的实现" class="headerlink" title="ReadOSPageFaultCount 的实现"></a>ReadOSPageFaultCount 的实现</h3><p>这个函数负责读取操作系统记录的”缺页计数”，实现位于 <code>listing_0108_platform_metrics.cpp</code>。</p>
+<p><strong>Windows 平台</strong>：</p>
+<ul>
+<li><strong>API</strong>: <code>GetProcessMemoryInfo</code> (来自 <code>&lt;psapi.h&gt;</code>)</li>
+<li><strong>读取字段</strong>: <code>PROCESS_MEMORY_COUNTERS_EX.PageFaultCount</code></li>
+<li><strong>含义</strong>: 进程自启动以来，发生的 <strong>页面映射总数</strong>（包含 OS 批量预映射的数量）</li>
+</ul>
+<p><strong>Linux / macOS 平台</strong>：</p>
+<ul>
+<li><strong>API</strong>: <code>getrusage</code></li>
+<li><strong>读取字段</strong>: <code>ru_minflt</code> (软缺页) + <code>ru_majflt</code> (硬缺页)</li>
+</ul>
+<hr>
+<h2 id="Windows-测试结果"><a href="#Windows-测试结果" class="headerlink" title="Windows 测试结果"></a>Windows 测试结果</h2><blockquote>
+<p>以下测试结果来自 <strong>Win11 10.0.26100 Build 26100</strong>。在 Win10 1703 上测试并没有出现 Page Fault Clustering 优化，可能是内核配置差异。</p>
+</blockquote>
+<h3 id="正向访问（2048-页）"><a href="#正向访问（2048-页）" class="headerlink" title="正向访问（2048 页）"></a>正向访问（2048 页）</h3><p><strong>局部图</strong>：<br><img src="/image/fault_data_2048_zoom.svg" alt="Page Fault 局部图"></p>
+<p><strong>全局图</strong>：<br><img src="/image/fault_data_2048.svg" alt="Page Fault 全局图"></p>
+<p><strong>具体数据</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Page Count</th>
+<th>Touch Count</th>
+<th>Fault Count</th>
+<th>Extra Faults</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>5</td>
+<td>5</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>6</td>
+<td>6</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>7</td>
+<td>7</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>8</td>
+<td>8</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>9</td>
+<td>9</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>10</td>
+<td>10</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>11</td>
+<td>11</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>12</td>
+<td>12</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>13</td>
+<td>13</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>14</td>
+<td>14</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>15</td>
+<td>15</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>16</td>
+<td>16</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>17</td>
+<td><strong>32</strong></td>
+<td><strong>15</strong></td>
+</tr>
+<tr>
+<td>32</td>
+<td>18</td>
+<td>32</td>
+<td>14</td>
+</tr>
+<tr>
+<td>32</td>
+<td>19</td>
+<td>32</td>
+<td>13</td>
+</tr>
+<tr>
+<td>32</td>
+<td>20</td>
+<td>32</td>
+<td>12</td>
+</tr>
+<tr>
+<td>32</td>
+<td>21</td>
+<td>32</td>
+<td>11</td>
+</tr>
+<tr>
+<td>32</td>
+<td>22</td>
+<td>32</td>
+<td>10</td>
+</tr>
+<tr>
+<td>32</td>
+<td>23</td>
+<td>32</td>
+<td>9</td>
+</tr>
+<tr>
+<td>32</td>
+<td>24</td>
+<td>32</td>
+<td>8</td>
+</tr>
+<tr>
+<td>32</td>
+<td>25</td>
+<td>32</td>
+<td>7</td>
+</tr>
+<tr>
+<td>32</td>
+<td>26</td>
+<td>32</td>
+<td>6</td>
+</tr>
+<tr>
+<td>32</td>
+<td>27</td>
+<td>32</td>
+<td>5</td>
+</tr>
+<tr>
+<td>32</td>
+<td>28</td>
+<td>32</td>
+<td>4</td>
+</tr>
+<tr>
+<td>32</td>
+<td>29</td>
+<td>32</td>
+<td>3</td>
+</tr>
+<tr>
+<td>32</td>
+<td>30</td>
+<td>32</td>
+<td>2</td>
+</tr>
+<tr>
+<td>32</td>
+<td>31</td>
+<td>32</td>
+<td>1</td>
+</tr>
+<tr>
+<td>32</td>
+<td>32</td>
+<td>32</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>可以看到，这个图并不是一条直线，而是 <strong>阶梯形</strong> 的。数据中出现了 <strong>单位为 16 的跳跃</strong>，说明存在一种”预分配”机制。</p>
+<hr>
+<h3 id="Windows-页面错误聚类（Page-Fault-Clustering）"><a href="#Windows-页面错误聚类（Page-Fault-Clustering）" class="headerlink" title="Windows 页面错误聚类（Page Fault Clustering）"></a>Windows 页面错误聚类（Page Fault Clustering）</h3><p>查看 WRK 源码后，找到了这个机制：<strong>Page Fault Clustering</strong>。</p>
+<p>页面错误聚类是 Windows 内存管理器的一项优化技术：当发生页面错误时，不仅读入导致错误的页面，还会 <strong>预读取相邻的页面</strong>，以减少未来的页面错误次数。</p>
+<p>这是一个 <strong>线程级别</strong> 的配置，在每个线程的 <code>ETHREAD</code> 中有如下字段：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">ULONG ReadClusterSize;              <span class="comment">// 每次页面错误时预读的页面数量</span></span><br><span class="line">BOOLEAN ForwardClusterOnly;         <span class="comment">// 是否只向前聚类（不向后）</span></span><br><span class="line">BOOLEAN DisablePageFaultClustering; <span class="comment">// 是否完全禁用页面错误聚类</span></span><br></pre></td></tr></table></figure>
+<p><strong>ReadClusterSize 的初始化</strong>（根据物理内存大小）：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>物理内存</th>
+<th>ReadClusterSize</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>≤ 13MB</td>
+<td>2 页</td>
+</tr>
+<tr>
+<td>13MB - 19MB</td>
+<td>4 页</td>
+</tr>
+<tr>
+<td>&gt; 19MB</td>
+<td>7 页</td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<p><strong>注</strong>：Win11 实测观察到 <strong>16 页</strong> 的聚类跳跃，与 WRK 的默认值（7 页）不同，可能是新版本调整了参数或针对匿名内存做了不同实现。</p>
+</blockquote>
+<hr>
+<h3 id="为什么每-512-页产生额外页面错误？"><a href="#为什么每-512-页产生额外页面错误？" class="headerlink" title="为什么每 512 页产生额外页面错误？"></a>为什么每 512 页产生额外页面错误？</h3><p>在 <code>pagfault.c</code> 第 2670 行左右，聚类计算基于页表内的位置：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">MaxForwardPageCount = PTE_PER_PAGE - (BYTE_OFFSET(PointerPte) / <span class="keyword">sizeof</span>(MMPTE));</span><br><span class="line">MaxBackwardPageCount = PTE_PER_PAGE - MaxForwardPageCount;</span><br></pre></td></tr></table></figure>
+<p>其中 <code>PTE_PER_PAGE = 512</code>（4096 字节页表 ÷ 8 字节 PTE = 512 个条目）。</p>
+<p>当触摸 512 个页面后，一个页表被填满，Windows 必须分配新的物理页面来存储下一个页表。Windows 的页面错误计数器将这个 <strong>页表页面的映射也计为”页面错误”</strong>，所以每 512 个用户页面就会看到 1 个额外的页面错误。</p>
+<h3 id="为什么预映射在页表边界停止？"><a href="#为什么预映射在页表边界停止？" class="headerlink" title="为什么预映射在页表边界停止？"></a>为什么预映射在页表边界停止？</h3><p>在 <code>pagfault.c</code> 第 3926 行，向前聚类的核心循环：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">while</span> ((MiIsPteOnPdeBoundary(CheckPte) == <span class="number">0</span>) &amp;&amp;  <span class="comment">// 关键检查！</span></span><br><span class="line">       (Page &lt; EndPage) &amp;&amp;</span><br><span class="line">       (CheckPte &lt; &amp;Subsection-&gt;SubsectionBase[Subsection-&gt;PtesInSubsection]) &amp;&amp;</span><br><span class="line">       (CheckPte-&gt;u.Long == BasePte-&gt;u.Long)) &#123;</span><br><span class="line">    ControlArea-&gt;NumberOfPfnReferences += <span class="number">1</span>;</span><br><span class="line">    ReadSize += PAGE_SIZE;</span><br><span class="line">    Page += <span class="number">1</span>;</span><br><span class="line">    CheckPte += <span class="number">1</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p><code>MiIsPteOnPdeBoundary</code> 宏检查 PTE 地址是否对齐到 4KB 边界。当 PTE 索引从 511 回绕到 0 时，循环立即终止。</p>
+<p><strong>Windows 故意设计成不跨越页表边界进行聚类</strong>，这是为了：</p>
+<ul>
+<li>避免跨页表的额外复杂度</li>
+<li>保持局部性原理（同一页表内的页面更可能连续访问）</li>
+<li>限制预取范围，避免过度消耗内存</li>
+</ul>
+<hr>
+<h3 id="反向访问（2048-页）"><a href="#反向访问（2048-页）" class="headerlink" title="反向访问（2048 页）"></a>反向访问（2048 页）</h3><p><strong>局部图</strong>：<br><img src="/image/fault_data_backward_2048_zoom.svg" alt="反向访问局部图"></p>
+<p><strong>全局图</strong>：<br><img src="/image/fault_data_backward_2048.svg" alt="反向访问全局图"></p>
+<p><strong>具体数据</strong>：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>Page Count</th>
+<th>Touch Count</th>
+<th>Fault Count</th>
+<th>Extra Faults</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>32</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>2</td>
+<td>2</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>3</td>
+<td>3</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>4</td>
+<td>4</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>5</td>
+<td>5</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>6</td>
+<td>6</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>7</td>
+<td>7</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>8</td>
+<td>8</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>9</td>
+<td>9</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>10</td>
+<td>10</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>11</td>
+<td>11</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>12</td>
+<td>12</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>13</td>
+<td>13</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>14</td>
+<td>14</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>15</td>
+<td>15</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>16</td>
+<td>16</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>17</td>
+<td>17</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>18</td>
+<td>18</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>19</td>
+<td>19</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>20</td>
+<td>20</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>21</td>
+<td>21</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>22</td>
+<td>22</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>23</td>
+<td>23</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>24</td>
+<td>24</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>25</td>
+<td>25</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>26</td>
+<td>26</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>27</td>
+<td>27</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>28</td>
+<td>28</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>29</td>
+<td>29</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>30</td>
+<td>30</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>31</td>
+<td>31</td>
+<td>0</td>
+</tr>
+<tr>
+<td>32</td>
+<td>32</td>
+<td>32</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>反向访问基本是完全的直线（每次访问都触发一次映射），除了在 PTE 用完时分配新页表会多出一个。</p>
+<p>这说明当前 Windows 内核版本下，当前进程被判断为 <strong>只需要向前（小地址方向）聚类</strong>。</p>
+<hr>
+<h3 id="综合性能测试"><a href="#综合性能测试" class="headerlink" title="综合性能测试"></a>综合性能测试</h3><p><img src="/image/result_115.svg" alt="综合测试结果"></p>
+<ul>
+<li>带 <code>malloc</code> 的是每次都新分配内存</li>
+<li>不带的是空间复用</li>
+</ul>
+<p>可以看到预取对于 <strong>正向访问的大幅优化</strong>。</p>
+<hr>
+<h2 id="Linux-的类似机制"><a href="#Linux-的类似机制" class="headerlink" title="Linux 的类似机制"></a>Linux 的类似机制</h2><p>在 Linux 中存在一些类似的机制：</p>
+<h3 id="1-Fault-Around（文件映射预映射）"><a href="#1-Fault-Around（文件映射预映射）" class="headerlink" title="1. Fault Around（文件映射预映射）"></a>1. Fault Around（文件映射预映射）</h3><p>这是最接近 Windows Page Fault Clustering 的机制。</p>
+<p><strong>位置</strong>：<code>mm/memory.c</code> 第 5507-5537 行</p>
+<p><strong>仅针对文件映射</strong>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/*</span></span><br><span class="line"><span class="comment"> * do_fault_around() tries to map few pages around the fault address.</span></span><br><span class="line"><span class="comment"> * The hope is that the pages will be needed soon and this will lower</span></span><br><span class="line"><span class="comment"> * the number of faults to handle.</span></span><br><span class="line"><span class="comment"> *</span></span><br><span class="line"><span class="comment"> * This function doesn&#x27;t cross VMA or page table boundaries.</span></span><br><span class="line"><span class="comment"> * fault_around_pages defines how many pages we&#x27;ll try to map.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="type">static</span> <span class="type">vm_fault_t</span> <span class="title function_">do_fault_around</span><span class="params">(<span class="keyword">struct</span> vm_fault *vmf)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">pgoff_t</span> nr_pages = READ_ONCE(fault_around_pages);  <span class="comment">// 默认 16 页 (64KB)</span></span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 计算映射范围 [from_pte, to_pte]</span></span><br><span class="line">    from_pte = max(ALIGN_DOWN(pte_off, nr_pages),</span><br><span class="line">                   pte_off - min(pte_off, vma_off));</span><br><span class="line">    to_pte = min3(from_pte + nr_pages, (<span class="type">pgoff_t</span>)PTRS_PER_PTE,</span><br><span class="line">                  pte_off + vma_pages(vmf-&gt;vma) - vma_off) - <span class="number">1</span>;</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 调用 vm_ops-&gt;map_pages() 批量映射</span></span><br><span class="line">    ret = vmf-&gt;vma-&gt;vm_ops-&gt;map_pages(vmf, start_pgoff, end_pgoff);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="2-Swap-Readahead（换入预读）"><a href="#2-Swap-Readahead（换入预读）" class="headerlink" title="2. Swap Readahead（换入预读）"></a>2. Swap Readahead（换入预读）</h3><p>当从 swap 换入页面时，Linux 会预读相邻的页面。</p>
+<p><strong>位置</strong>：<code>mm/swap_state.c</code> 第 567-637 行</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">/**</span></span><br><span class="line"><span class="comment"> * swap_cluster_readahead - swap in pages in hope we need them soon</span></span><br><span class="line"><span class="comment"> * </span></span><br><span class="line"><span class="comment"> * Primitive swap readahead code. We simply read an aligned block of</span></span><br><span class="line"><span class="comment"> * (1 &lt;&lt; page_cluster) entries in the swap area.</span></span><br><span class="line"><span class="comment"> */</span></span><br><span class="line"><span class="keyword">struct</span> folio *<span class="title function_">swap_cluster_readahead</span><span class="params">(<span class="type">swp_entry_t</span> entry, <span class="type">gfp_t</span> gfp_mask, ...)</span></span><br><span class="line">&#123;</span><br><span class="line">    mask = swapin_nr_pages(offset) - <span class="number">1</span>;  <span class="comment">// 动态计算预读页数</span></span><br><span class="line">    </span><br><span class="line">    start_offset = offset &amp; ~mask;</span><br><span class="line">    end_offset = offset | mask;</span><br><span class="line">    </span><br><span class="line">    <span class="keyword">for</span> (offset = start_offset; offset &lt;= end_offset; offset++) &#123;</span><br><span class="line">        folio = __read_swap_cache_async(...);  <span class="comment">// 异步读入</span></span><br><span class="line">        <span class="keyword">if</span> (page_allocated)</span><br><span class="line">            swap_read_folio(folio, &amp;splug);</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<hr>
+<h3 id="3-透明大页（THP）的匿名页面优化"><a href="#3-透明大页（THP）的匿名页面优化" class="headerlink" title="3. 透明大页（THP）的匿名页面优化"></a>3. 透明大页（THP）的匿名页面优化</h3><p>对于匿名页面，Linux 使用 <strong>透明大页</strong> 而非 fault around 来减少缺页次数。</p>
+<p><strong>位置</strong>：<code>mm/memory.c</code> 第 4915-4998 行</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">static</span> <span class="keyword">struct</span> folio *<span class="title function_">alloc_anon_folio</span><span class="params">(<span class="keyword">struct</span> vm_fault *vmf)</span></span><br><span class="line">&#123;</span><br><span class="line"><span class="meta">#<span class="keyword">ifdef</span> CONFIG_TRANSPARENT_HUGEPAGE</span></span><br><span class="line">    <span class="comment">// 获取可用的大页 orders（从 PMD_ORDER 到 order-0）</span></span><br><span class="line">    orders = thp_vma_allowable_orders(vma, vma-&gt;vm_flags, ...);</span><br><span class="line">    </span><br><span class="line">    <span class="comment">// 尝试分配最大可用的大页</span></span><br><span class="line">    <span class="keyword">while</span> (orders) &#123;</span><br><span class="line">        addr = ALIGN_DOWN(vmf-&gt;address, PAGE_SIZE &lt;&lt; order);</span><br><span class="line">        folio = vma_alloc_folio(gfp, order, vma, addr);</span><br><span class="line">        <span class="keyword">if</span> (folio) &#123;</span><br><span class="line">            <span class="keyword">return</span> folio;  <span class="comment">// 分配成功，映射整个大页</span></span><br><span class="line">        &#125;</span><br><span class="line">        order = next_order(&amp;orders, order);  <span class="comment">// 降级尝试更小的 order</span></span><br><span class="line">    &#125;</span><br><span class="line"><span class="meta">#<span class="keyword">endif</span></span></span><br><span class="line">    <span class="comment">// fallback 到普通单页</span></span><br><span class="line">    <span class="keyword">return</span> folio_prealloc(vma-&gt;vm_mm, vma, vmf-&gt;address, <span class="literal">true</span>);</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<p>如果启用了 THP，一次匿名页面缺页可能会分配 <strong>2MB（512 页）</strong> 的大页，远超 Windows 的 16 页聚类。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io">nv3ifu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io/2026/01/21/Page-Fault-Clustering/">https://nv3ifu.github.io/2026/01/21/Page-Fault-Clustering/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/Memory-Management/">Memory Management</a><a class="post-meta__tags" href="/tags/Page-Fault/">Page Fault</a><a class="post-meta__tags" href="/tags/Windows-Internals/">Windows Internals</a><a class="post-meta__tags" href="/tags/Linux-Kernel/">Linux Kernel</a></div><div class="post-share"><div class="social-share" data-image="/image/fault_data_2048_zoom.svg" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related" href="/2026/01/22/Pipeline-Depth-CPU-Frequency/" title="Pipeline Depth &amp; CPU Frequency"><img class="cover" src="/image/chip.jpg" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">Pipeline Depth & CPU Frequency</div></div><div class="info-2"><div class="info-item-1">这篇博客简单介绍两个概念：流水线深度 和 频率。 基本概念 流水线深度：一条指令流经 CPU 的过程被切分出来的步骤数量 频率：每秒钟流水线向前推进多少个步骤   现代流水线设计现代教学用的 CPU 模拟器一般是 5 级流水线，比如 gem5 中的一个 CPU 模型：O3CPU - 5 级乱序流水线 1Fetch → Decode → Rename → IEW → Commit 以本机的性能核 Golden Cove（2021 年推出）为例，根据 μops cache 是否命中、指令复杂度等因素，流水线深度在 14~19 级。  历史教训：Pentium 4 的 NetBurst 架构在历史上，CPU 流水线深度并不是稳步增长的。 20 多年前，英特尔曾两次尝试用完全不同的东西来取代其坚固但陈旧的 P6 微架构：  安腾 (Itanium)：避免与乱序执行和可变长度解码相关的复杂性，提供非常宽的顺序执行 奔腾 4 (Pentium 4)：基于 90nm（”Prescott”）工艺，于 2004 年推出，流水线深度达到了惊人的 31 级  10 GHz 的梦想破灭Pentium 4...</div></div></div></a><a class="pagination-related" href="/2026/01/15/constexpr/" title="constexpr：编译期求值的秘密"><img class="cover" src="/image/constexpr.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">constexpr：编译期求值的秘密</div></div><div class="info-2"><div class="info-item-1">constexpr 是 C++11 引入的关键字，表示一个表达式或函数可以在 编译期求值。 constexpr 修饰变量编译期计算值。constexpr 本身不是类型限定符，但它对变量 隐含顶层 const。 举例说明： 1constexpr int* ptr = &amp;val;  ptr 本身不可变（不能指向别的地址）。 但可以通过 ptr 修改 val 的值（*ptr = 10; 是合法的）。   constexpr 修饰函数告诉编译器：  “如果参数都是编译期常量，编译的时候就把结果算出来；如果不是，就把它当作普通函数在运行期执行。”   为什么要使用 constexpr？把运行时的计算提前到了编译期，减少了运行时开销。  如何实现编译时计算？这是 constexpr 的核心，也是一直困扰我的问题。 我困扰的点是：AST 解释执行 这个东西除了教学以外还有什么应用场景？ 之前在写 Pinky 编译器 的时候，第一个实现的执行方式就是遍历 AST 执行，但我一直很难想到这种执行方式的其他实际应用场景。今天突然想到 constexpr，来看了一下它的实现，终于明白了它的使用...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2025/12/21/c-new/" title="C++ new"><img class="cover" src="/image/image12.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2025-12-21</div><div class="info-item-2">C++ new</div></div><div class="info-2"><div class="info-item-1">C++ 中 new 是如何工作的呢？ 创建对象数组示例以创建一个对象数组举例： 1234567891011121314#include &lt;iostream&gt;class Test &#123;public:  int value;  Test(int v) : value(v) &#123; std::cout &lt;&lt; &quot;ctor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;  ~Test() &#123; std::cout &lt;&lt; &quot;dtor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;&#125;;int main() &#123;  Test *arr = new Test[5]&#123;1, 2, 3, 4, 5&#125;;  delete[] arr;  return 0;&#125; arr 拿到的地址是 0x000055555556b2b8，指向的是第一个对象。 内存布局 可以看到小端序存储的五个 value。这...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%BC%95%E8%A8%80"><span class="toc-number">1.</span> <span class="toc-text">引言</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E6%B5%8B%E8%AF%95%E4%BB%A3%E7%A0%81"><span class="toc-number">2.</span> <span class="toc-text">测试代码</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BB%A3%E7%A0%81%E5%8A%9F%E8%83%BD%E6%80%BB%E7%BB%93"><span class="toc-number">2.1.</span> <span class="toc-text">代码功能总结</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#ReadOSPageFaultCount-%E7%9A%84%E5%AE%9E%E7%8E%B0"><span class="toc-number">2.2.</span> <span class="toc-text">ReadOSPageFaultCount 的实现</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Windows-%E6%B5%8B%E8%AF%95%E7%BB%93%E6%9E%9C"><span class="toc-number">3.</span> <span class="toc-text">Windows 测试结果</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E6%AD%A3%E5%90%91%E8%AE%BF%E9%97%AE%EF%BC%882048-%E9%A1%B5%EF%BC%89"><span class="toc-number">3.1.</span> <span class="toc-text">正向访问（2048 页）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#Windows-%E9%A1%B5%E9%9D%A2%E9%94%99%E8%AF%AF%E8%81%9A%E7%B1%BB%EF%BC%88Page-Fault-Clustering%EF%BC%89"><span class="toc-number">3.2.</span> <span class="toc-text">Windows 页面错误聚类（Page Fault Clustering）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E6%AF%8F-512-%E9%A1%B5%E4%BA%A7%E7%94%9F%E9%A2%9D%E5%A4%96%E9%A1%B5%E9%9D%A2%E9%94%99%E8%AF%AF%EF%BC%9F"><span class="toc-number">3.3.</span> <span class="toc-text">为什么每 512 页产生额外页面错误？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88%E9%A2%84%E6%98%A0%E5%B0%84%E5%9C%A8%E9%A1%B5%E8%A1%A8%E8%BE%B9%E7%95%8C%E5%81%9C%E6%AD%A2%EF%BC%9F"><span class="toc-number">3.4.</span> <span class="toc-text">为什么预映射在页表边界停止？</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%8F%8D%E5%90%91%E8%AE%BF%E9%97%AE%EF%BC%882048-%E9%A1%B5%EF%BC%89"><span class="toc-number">3.5.</span> <span class="toc-text">反向访问（2048 页）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BB%BC%E5%90%88%E6%80%A7%E8%83%BD%E6%B5%8B%E8%AF%95"><span class="toc-number">3.6.</span> <span class="toc-text">综合性能测试</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Linux-%E7%9A%84%E7%B1%BB%E4%BC%BC%E6%9C%BA%E5%88%B6"><span class="toc-number">4.</span> <span class="toc-text">Linux 的类似机制</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#1-Fault-Around%EF%BC%88%E6%96%87%E4%BB%B6%E6%98%A0%E5%B0%84%E9%A2%84%E6%98%A0%E5%B0%84%EF%BC%89"><span class="toc-number">4.1.</span> <span class="toc-text">1. Fault Around（文件映射预映射）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#2-Swap-Readahead%EF%BC%88%E6%8D%A2%E5%85%A5%E9%A2%84%E8%AF%BB%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">2. Swap Readahead（换入预读）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#3-%E9%80%8F%E6%98%8E%E5%A4%A7%E9%A1%B5%EF%BC%88THP%EF%BC%89%E7%9A%84%E5%8C%BF%E5%90%8D%E9%A1%B5%E9%9D%A2%E4%BC%98%E5%8C%96"><span class="toc-number">4.3.</span> <span class="toc-text">3. 透明大页（THP）的匿名页面优化</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

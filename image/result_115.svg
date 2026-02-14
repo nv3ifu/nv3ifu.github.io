@@ -1,0 +1,39 @@
+<svg width="800" height="600" xmlns="http://www.w3.org/2000/svg">
+<rect width="100%" height="100%" fill="white" />
+<text x="400.0" y="30.0" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold">Memory Write Bandwidth Comparison</text>
+<line x1="250.0" y1="60" x2="250.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="250.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">0.0</text>
+<line x1="300.0" y1="60" x2="300.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="300.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">1.7</text>
+<line x1="350.0" y1="60" x2="350.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="350.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">3.5</text>
+<line x1="400.0" y1="60" x2="400.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="400.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">5.2</text>
+<line x1="450.0" y1="60" x2="450.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="450.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">6.9</text>
+<line x1="500.0" y1="60" x2="500.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="500.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">8.6</text>
+<line x1="550.0" y1="60" x2="550.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="550.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">10.4</text>
+<line x1="600.0" y1="60" x2="600.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="600.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">12.1</text>
+<line x1="650.0" y1="60" x2="650.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="650.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">13.8</text>
+<line x1="700.0" y1="60" x2="700.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="700.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">15.5</text>
+<line x1="750.0" y1="60" x2="750.0" y2="550" stroke="#e0e0e0" stroke-width="1" />
+<text x="750.0" y="570" text-anchor="middle" font-family="sans-serif" font-size="12">17.3</text>
+<text x="400.0" y="590" text-anchor="middle" font-family="sans-serif" font-size="14">Bandwidth (GB/s)</text>
+<rect x="250" y="84.5" width="454.54545454545445" height="73.5" fill="#4a90e2" rx="4" />
+<text x="240" y="126.25" text-anchor="end" font-family="sans-serif" font-size="14">WriteToAllBytes</text>
+<text x="694.5454545454545" y="126.25" text-anchor="end" font-family="sans-serif" font-size="12" fill="white" font-weight="bold">15.70 GB/s</text>
+<rect x="250" y="207.0" width="171.8330459821882" height="73.5" fill="#e25c4a" rx="4" />
+<text x="240" y="248.75" text-anchor="end" font-family="sans-serif" font-size="14">malloc + WriteToAllBytes</text>
+<text x="411.8330459821882" y="248.75" text-anchor="end" font-family="sans-serif" font-size="12" fill="white" font-weight="bold">5.94 GB/s</text>
+<rect x="250" y="329.5" width="375.25611640215214" height="73.5" fill="#4a90e2" rx="4" />
+<text x="240" y="371.25" text-anchor="end" font-family="sans-serif" font-size="14">WriteToAllBytesBackward</text>
+<text x="615.2561164021522" y="371.25" text-anchor="end" font-family="sans-serif" font-size="12" fill="white" font-weight="bold">12.96 GB/s</text>
+<rect x="250" y="452.0" width="68.53902539451175" height="73.5" fill="#e25c4a" rx="4" />
+<text x="240" y="493.75" text-anchor="end" font-family="sans-serif" font-size="14">malloc + WriteToAllBytesBackward</text>
+<text x="308.5390253945118" y="493.75" text-anchor="end" font-family="sans-serif" font-size="12" fill="white" font-weight="bold">2.37 GB/s</text>
+</svg>

@@ -1,0 +1,547 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>Cache | 0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta name="description" content="DRAM 读取速度太慢，所以就有了缓存。但同时也引入了缓存抖动、伪共享、读后写、一致性等需要解决的问题，这篇博客中就来介绍下相关的概念。 缓存的种类 L1：指令缓存、数据缓存，核独占 L2：数据指令通用，核独占 L3：核共享  这里以包含式 L3 为例：  L3 包含 L1&#x2F;L2 的所有数据 L3 的目录记录：这行在哪些核的 L1&#x2F;L2 里  举例：Core 1 想读一个地址：  查 L3 目录">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Cache">
+<meta property="og:url" content="https://nv3ifu.github.io/2025/12/24/Cache/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:description" content="DRAM 读取速度太慢，所以就有了缓存。但同时也引入了缓存抖动、伪共享、读后写、一致性等需要解决的问题，这篇博客中就来介绍下相关的概念。 缓存的种类 L1：指令缓存、数据缓存，核独占 L2：数据指令通用，核独占 L3：核共享  这里以包含式 L3 为例：  L3 包含 L1&#x2F;L2 的所有数据 L3 的目录记录：这行在哪些核的 L1&#x2F;L2 里  举例：Core 1 想读一个地址：  查 L3 目录">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/cache.png">
+<meta property="article:published_time" content="2025-12-23T17:53:00.000Z">
+<meta property="article:modified_time" content="2026-01-23T16:07:03.649Z">
+<meta property="article:author" content="nv3ifu">
+<meta property="article:tag" content="CPU Architecture">
+<meta property="article:tag" content="Cache">
+<meta property="article:tag" content="MESI">
+<meta property="article:tag" content="Memory">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/cache.png"><script type="application/ld+json">{
+  "@context": "https://schema.org",
+  "@type": "BlogPosting",
+  "headline": "Cache",
+  "url": "https://nv3ifu.github.io/2025/12/24/Cache/",
+  "image": "https://nv3ifu.github.io/image/cache.png",
+  "datePublished": "2025-12-23T17:53:00.000Z",
+  "dateModified": "2026-01-23T16:07:03.649Z",
+  "author": [
+    {
+      "@type": "Person",
+      "name": "nv3ifu",
+      "url": "https://nv3ifu.github.io"
+    }
+  ]
+}</script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/2025/12/24/Cache/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: 'Cache',
+  isHighlightShrink: false,
+  isToc: true,
+  pageType: 'post'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="post" id="body-wrap"><header class="post-bg" id="page-header" style="background-image: url(/image/cache.png);"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a><a class="nav-page-title" href="/"><span class="site-name">Cache</span><span class="site-name"><i class="fa-solid fa-circle-arrow-left"></i><span>  Back to Home</span></span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="post-info"><h1 class="post-title">Cache</h1><div id="post-meta"><div class="meta-firstline"><span class="post-meta-date"><i class="far fa-calendar-alt fa-fw post-meta-icon"></i><span class="post-meta-label">Created</span><time class="post-meta-date-created" datetime="2025-12-23T17:53:00.000Z" title="Created 2025-12-24 01:53:00">2025-12-24</time><span class="post-meta-separator">|</span><i class="fas fa-history fa-fw post-meta-icon"></i><span class="post-meta-label">Updated</span><time class="post-meta-date-updated" datetime="2026-01-23T16:07:03.649Z" title="Updated 2026-01-24 00:07:03">2026-01-24</time></span><span class="post-meta-categories"><span class="post-meta-separator">|</span><i class="fas fa-inbox fa-fw post-meta-icon"></i><a class="post-meta-categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="meta-secondline"><span class="post-meta-separator">|</span><span class="post-meta-pv-cv" id="" data-flag-title=""><i class="far fa-eye fa-fw post-meta-icon"></i><span class="post-meta-label">Post Views:</span><span id="busuanzi_value_page_pv"><i class="fa-solid fa-spinner fa-spin"></i></span></span></div></div></div></header><main class="layout" id="content-inner"><div id="post"><article class="container post-content" id="article-container"><p>DRAM 读取速度太慢，所以就有了缓存。但同时也引入了缓存抖动、伪共享、读后写、一致性等需要解决的问题，这篇博客中就来介绍下相关的概念。</p>
+<h2 id="缓存的种类"><a href="#缓存的种类" class="headerlink" title="缓存的种类"></a>缓存的种类</h2><ul>
+<li><strong>L1</strong>：指令缓存、数据缓存，核独占</li>
+<li><strong>L2</strong>：数据指令通用，核独占</li>
+<li><strong>L3</strong>：核共享</li>
+</ul>
+<p>这里以<strong>包含式 L3</strong> 为例：</p>
+<ul>
+<li>L3 包含 L1/L2 的所有数据</li>
+<li>L3 的目录记录：这行在哪些核的 L1/L2 里</li>
+</ul>
+<p><strong>举例</strong>：Core 1 想读一个地址：</p>
+<ol>
+<li>查 L3 目录</li>
+<li>发现 Core 0 有 Modified 副本</li>
+<li>通知 Core 0 写回</li>
+</ol>
+<p>按照 L1 → L2 → L3 顺序访问，一个 miss 了就下一个，访问速度递减，大小递增。</p>
+<h2 id="缓存映射方式"><a href="#缓存映射方式" class="headerlink" title="缓存映射方式"></a>缓存映射方式</h2><p>缓存映射方式主要有三种：</p>
+<ul>
+<li><strong>直接映射</strong>（1 路组相联）</li>
+<li><strong>组相联</strong></li>
+<li><strong>全相联</strong>（缓存行数 = 路数）</li>
+</ul>
+<p>下面的动画中详细解释：</p>
+<p>👉 <a href="/html/set_associative_cache.html">点击查看组相联缓存动画演示</a></p>
+<h2 id="缓存行置换算法"><a href="#缓存行置换算法" class="headerlink" title="缓存行置换算法"></a>缓存行置换算法</h2><p>常用的是 <strong>Tree PLRU</strong>（用二叉树近似 LRU）。为什么不用纯 LRU 呢？是因为硬件成本的问题：</p>
+<ol>
+<li><p><strong>存储缓存行状态需要额外的空间</strong></p>
+<ul>
+<li>N 路组相联需要的空间 = log₂(N!) × 组数 = log₂(N!) × (缓存总大小 / 缓存行大小 / N)</li>
+</ul>
+</li>
+<li><p><strong>更新太频繁</strong></p>
+<ul>
+<li>在程序运行的过程中，缓存行访问是极度密集的，每次访问就要更新状态、插入链表，会极大的拖慢速度。</li>
+</ul>
+</li>
+</ol>
+<p>这点和页面置换算法很像，由于硬件限制，它也没办法实现纯 LRU，后续的文章中再去说明。</p>
+<hr>
+<h2 id="缓存一致性协议"><a href="#缓存一致性协议" class="headerlink" title="缓存一致性协议"></a>缓存一致性协议</h2><h3 id="MESI"><a href="#MESI" class="headerlink" title="MESI"></a>MESI</h3><p><strong>MESI 的状态机</strong>：它把每一行缓存（Cache Line，通常 64 字节）标记为四种状态之一：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>M (Modified)</strong></td>
+<td><strong>脏数据</strong>。只有我有最新版，内存里是旧的。我是老大，可以随便改。</td>
+</tr>
+<tr>
+<td><strong>E (Exclusive)</strong></td>
+<td><strong>独占</strong>。只有我有，但和内存一样。想改可以直接改（变成 M）。</td>
+</tr>
+<tr>
+<td><strong>S (Shared)</strong></td>
+<td><strong>共享</strong>。我有，别人也有。大家只能读，谁想改必须先通知其他人作废。</td>
+</tr>
+<tr>
+<td><strong>I (Invalid)</strong></td>
+<td><strong>无效</strong>。我的数据过时了，不能用。</td>
+</tr>
+</tbody>
+</table>
+</div>
+<h3 id="MOESI（AMD-采用）"><a href="#MOESI（AMD-采用）" class="headerlink" title="MOESI（AMD 采用）"></a>MOESI（AMD 采用）</h3><p>在 MESI 的基础上增加了 <strong>O (Owned)</strong> 状态：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>O (Owned)</strong></td>
+<td>我有<strong>脏数据且是权威副本</strong>，但别人也有共享副本（只是他们的是只读的）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>解决的问题</strong>：MESI 的 S 状态要求数据必须和内存一致。当 M 态的数据被其他核心读取时，必须先写回内存，然后双方都变成 S。</p>
+<p><strong>MOESI 的优化</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">场景：核心A有M态数据，核心B想读</span><br><span class="line"></span><br><span class="line">MESI流程：</span><br><span class="line">  A(M) → 写回内存 → A(S), B(S)  需要访问慢速内存</span><br><span class="line"></span><br><span class="line">MOESI流程：</span><br><span class="line">  A(M) → A(O), B(S)  直接核心间传输，不写回内存</span><br><span class="line">  A持有O态，负责将来写回内存</span><br></pre></td></tr></table></figure>
+<p><strong>好处</strong>：减少内存访问，核心间直接共享脏数据。</p>
+<h3 id="MESIF（Intel-采用）"><a href="#MESIF（Intel-采用）" class="headerlink" title="MESIF（Intel 采用）"></a>MESIF（Intel 采用）</h3><p>在 MESI 的基础上增加了 <strong>F (Forward)</strong> 状态：</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>F (Forward)</strong></td>
+<td>特殊的 S 态，<strong>负责响应其他核心的读请求</strong></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>解决的问题</strong>：当多个核心都是 S 态时，如果又有一个核心想读，谁来响应？</p>
+<ul>
+<li>MESI：所有 S 态核心可能都响应 → 总线冲突/冗余</li>
+<li>或者去内存读 → 慢</li>
+</ul>
+<p><strong>MESIF 的优化</strong>：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">场景：A、B、C都有S态副本，D想读</span><br><span class="line"></span><br><span class="line">MESI问题：</span><br><span class="line">  A(S), B(S), C(S) 都可能响应 → 谁负责？冲突！</span><br><span class="line"></span><br><span class="line">MESIF解决：</span><br><span class="line">  A(F), B(S), C(S)  → 只有F态的A负责响应D的请求</span><br><span class="line">  响应后：A(S), D(F)  → 最新读取者变成F</span><br></pre></td></tr></table></figure>
+<p><strong>好处</strong>：明确谁负责响应，减少总线冲突。</p>
+<h3 id="为什么-Intel-不用-Owned-O-状态？"><a href="#为什么-Intel-不用-Owned-O-状态？" class="headerlink" title="为什么 Intel 不用 Owned (O) 状态？"></a>为什么 Intel 不用 Owned (O) 状态？</h3><p>关键原因在于 <strong>Intel 的 L3 缓存设计（Inclusive Cache）</strong>：</p>
+<ul>
+<li>Intel 的 L3 通常是 <strong>Inclusive（包含式）</strong> 的</li>
+<li>L3 包含了所有 L1/L2 的数据</li>
+<li>如果 L1/L2 里的数据是脏的（Modified），当别的核要读时：<ul>
+<li>Intel 的 <strong>L3 嗅探机制</strong>会介入</li>
+<li>直接由 L3 或通过 L3 协调把 Modified 数据给出去</li>
+</ul>
+</li>
+</ul>
+<p>换句话说，<strong>Intel 架构在 L3 层面隐含实现了类似 “Owned” 的功能</strong>（通过缓存层级结构解决）。</p>
+<p>所以在核心的一致性协议（MESIF）里，Intel 更关注解决<strong>带宽竞争问题</strong>（F 状态），而不是脏数据共享——因为脏数据共享已经被 L3 的设计解决了。</p>
+<hr>
+<h2 id="Store-Buffer"><a href="#Store-Buffer" class="headerlink" title="Store Buffer"></a>Store Buffer</h2><p>MESI 虽然保证了一致性，但太慢了。当核心 A 要改数据时，它必须发消息给其他核心并等总线通信返回。</p>
+<p><strong>解决方案</strong>：CPU 引入了 <strong>Store Buffer</strong>。</p>
+<ol>
+<li>核心 A 想写数据，但不想等 MESI 流程</li>
+<li>它把数据扔进 <strong>Store Buffer</strong>（这是核心私有的）</li>
+<li>核心 A <strong>立刻认为写操作完成了</strong>，继续执行下一条指令</li>
+<li>（在后台）等其他核心回复”已作废”后，Store Buffer 里的数据才真正写入 L1 缓存，并对外界可见</li>
+</ol>
+<p><strong>副作用（乱序）</strong>：这导致了”内存可见性”问题。核心 A 以为写完了，其实数据还卡在私有的 Store Buffer 里。</p>
+<ul>
+<li><strong>代码顺序</strong>：<code>x = 1; flag = true;</code></li>
+<li><strong>实际发生</strong>：<code>x=1</code> 卡在缓冲里，<code>flag=true</code> 先进入了缓存（因为 flag 所在的缓存行可能是 E 态，不需要等）</li>
+<li><strong>别人看到的</strong>：<code>flag</code> 变成了 true，但 <code>x</code> 还是 0。<strong>逻辑崩了！</strong></li>
+</ul>
+<hr>
+<h2 id="Invalidate-Queue"><a href="#Invalidate-Queue" class="headerlink" title="Invalidate Queue"></a>Invalidate Queue</h2><p><strong>Invalidate Queue（失效队列）</strong> 是与 Store Buffer 配套的另一个优化机制。</p>
+<h3 id="背景问题"><a href="#背景问题" class="headerlink" title="背景问题"></a>背景问题</h3><p>当核心 A 要修改一个 S 态的缓存行时，它需要发送 <strong>Invalidate 消息</strong>给其他核心，并等待回复。如果核心 B 很忙，核心 A 就得干等着。</p>
+<h3 id="解决方案"><a href="#解决方案" class="headerlink" title="解决方案"></a>解决方案</h3><p>CPU 引入了 Invalidate Queue：</p>
+<ol>
+<li>核心 B 收到失效请求</li>
+<li><strong>不立刻处理</strong>，而是把请求扔进 Invalidate Queue</li>
+<li><strong>立刻回复</strong> “已作废”（其实还没作废！）</li>
+<li>等 B 有空了，再从队列里取出请求，真正把缓存行置为 Invalid</li>
+</ol>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">核心A:                           核心B:</span><br><span class="line">  |                                |</span><br><span class="line">  |---- Invalidate 请求 ---------&gt;|</span><br><span class="line">  |                                | 放入队列，立刻回复</span><br><span class="line">  |&lt;--- Invalidate ACK -----------|</span><br><span class="line">  |                                |</span><br><span class="line">  | (A以为B已作废，继续执行)        | (B其实还没作废)</span><br><span class="line">  |                                |</span><br><span class="line">  |                                | ...稍后真正作废</span><br></pre></td></tr></table></figure>
+<h3 id="副作用（读到旧值）"><a href="#副作用（读到旧值）" class="headerlink" title="副作用（读到旧值）"></a>副作用（读到旧值）</h3><p>这会导致<strong>核心 B 读到已经被作废的旧数据</strong>：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 初始: x = 0, y = 0</span></span><br><span class="line"></span><br><span class="line"><span class="comment">// 核心A                      // 核心B</span></span><br><span class="line">x = <span class="number">1</span>;                        <span class="keyword">while</span> (y == <span class="number">0</span>);</span><br><span class="line">y = <span class="number">1</span>;                        print(x);  <span class="comment">// 可能打印 0！</span></span><br></pre></td></tr></table></figure>
+<p>A 发送 <code>x</code> 的失效请求，B 放入队列后回复 ACK。A 继续执行 <code>y = 1</code>。B 读到 <code>y == 1</code> 跳出循环，但失效请求还在队列里没处理，<strong>读 <code>x</code> 得到旧值 0</strong>！</p>
+<h3 id="对比-Store-Buffer-和-Invalidate-Queue"><a href="#对比-Store-Buffer-和-Invalidate-Queue" class="headerlink" title="对比 Store Buffer 和 Invalidate Queue"></a>对比 Store Buffer 和 Invalidate Queue</h3><div class="table-container">
+<table>
+<thead>
+<tr>
+<th>机制</th>
+<th>位置</th>
+<th>作用</th>
+<th>副作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Store Buffer</strong></td>
+<td>写端</td>
+<td>写操作先缓冲，不等失效确认</td>
+<td>写后读乱序（自己写的别人看不到）</td>
+</tr>
+<tr>
+<td><strong>Invalidate Queue</strong></td>
+<td>读端</td>
+<td>失效请求先缓冲，稍后处理</td>
+<td>读到旧值（别人作废的我还没作废）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="内存屏障"><a href="#内存屏障" class="headerlink" title="内存屏障"></a>内存屏障</h2><p>既然 Store Buffer 和 Invalidate Queue 都会导致乱序，我们就需要屏障指令来强制同步。</p>
+<div class="table-container">
+<table>
+<thead>
+<tr>
+<th>指令</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sfence</code></td>
+<td>Store Fence - 刷新 <strong>Store Buffer</strong>，确保写操作对外可见</td>
+</tr>
+<tr>
+<td><code>lfence</code></td>
+<td>Load Fence - 刷新 <strong>Invalidate Queue</strong>，确保读到最新值</td>
+</tr>
+<tr>
+<td><code>mfence</code></td>
+<td>Full Fence - 同时刷新两者（= sfence + lfence）</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+<h2 id="缓存中的一些问题"><a href="#缓存中的一些问题" class="headerlink" title="缓存中的一些问题"></a>缓存中的一些问题</h2><h3 id="伪共享（False-Sharing）"><a href="#伪共享（False-Sharing）" class="headerlink" title="伪共享（False Sharing）"></a>伪共享（False Sharing）</h3><p>两个核交替修改<strong>同一缓存行中的不同变量</strong>，互相卡 MESI，造成频繁的缓存行失效。</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+<li>Padding 填充，让变量独占一个缓存行</li>
+<li>设计时避免这种情况出现</li>
+</ul>
+<h3 id="冷启动（Cold-Start）"><a href="#冷启动（Cold-Start）" class="headerlink" title="冷启动（Cold Start）"></a>冷启动（Cold Start）</h3><p>第一次访问必然 miss。</p>
+<p><strong>解决方案</strong>：使用 <code>__builtin_prefetch</code> 预取一下，告诉 CPU 待会要用，让它提前放到缓存中。</p>
+<h3 id="缓存污染（Cache-Pollution）"><a href="#缓存污染（Cache-Pollution）" class="headerlink" title="缓存污染（Cache Pollution）"></a>缓存污染（Cache Pollution）</h3><p>大量连续读入/写入时，缓存不断被填满、驱逐、写回，驱逐了热点数据。</p>
+<p><strong>解决方案</strong>：</p>
+<ul>
+<li><strong>读</strong>：<code>_mm_stream_load_si128</code> - 告诉 CPU 不要放入缓存</li>
+<li><strong>写</strong>：<code>_mm_stream_si128</code> - 直接写内存，绕过缓存</li>
+</ul>
+<h3 id="缓存行抖动（Cache-Thrashing）"><a href="#缓存行抖动（Cache-Thrashing）" class="headerlink" title="缓存行抖动（Cache Thrashing）"></a>缓存行抖动（Cache Thrashing）</h3><p>组相联的组越小，越容易出现。多个地址都要进 cache，反复竞争同一组的有限位置，导致互相驱逐，命中率极低。</p>
+<p>现在应该不太容易出现了。</p>
+</article><div class="post-copyright"><div class="post-copyright__author"><span class="post-copyright-meta"><i class="fas fa-circle-user fa-fw"></i>Author: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io">nv3ifu</a></span></div><div class="post-copyright__type"><span class="post-copyright-meta"><i class="fas fa-square-arrow-up-right fa-fw"></i>Link: </span><span class="post-copyright-info"><a href="https://nv3ifu.github.io/2025/12/24/Cache/">https://nv3ifu.github.io/2025/12/24/Cache/</a></span></div><div class="post-copyright__notice"><span class="post-copyright-meta"><i class="fas fa-circle-exclamation fa-fw"></i>Copyright Notice: </span><span class="post-copyright-info">All articles on this blog are licensed under <a target="_blank" rel="noopener" href="https://creativecommons.org/licenses/by-nc-sa/4.0/">CC BY-NC-SA 4.0</a> unless otherwise stated.</span></div></div><div class="tag_share"><div class="post-meta__tag-list"><a class="post-meta__tags" href="/tags/CPU-Architecture/">CPU Architecture</a><a class="post-meta__tags" href="/tags/Cache/">Cache</a><a class="post-meta__tags" href="/tags/MESI/">MESI</a><a class="post-meta__tags" href="/tags/Memory/">Memory</a></div><div class="post-share"><div class="social-share" data-image="/image/cache.png" data-sites="facebook,x,wechat,weibo,qq"></div><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/css/share.min.css" media="print" onload="this.media='all'"><script src="https://cdn.jsdelivr.net/npm/butterfly-extsrc@1.1.6/sharejs/dist/js/social-share.min.js" defer></script></div></div><nav class="pagination-post" id="pagination"><a class="pagination-related  no-desc" href="/2026/01/12/Project-Demo/" title="项目演示网站"><img class="cover" src="/image/project.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of previous post"><div class="info"><div class="info-1"><div class="info-item-1">Previous</div><div class="info-item-2">项目演示网站</div></div></div></a><a class="pagination-related" href="/2025/12/21/c-new/" title="C++ new"><img class="cover" src="/image/image12.png" onerror="onerror=null;src='/img/404.jpg'" alt="cover of next post"><div class="info text-right"><div class="info-1"><div class="info-item-1">Next</div><div class="info-item-2">C++ new</div></div><div class="info-2"><div class="info-item-1">C++ 中 new 是如何工作的呢？ 创建对象数组示例以创建一个对象数组举例： 1234567891011121314#include &lt;iostream&gt;class Test &#123;public:  int value;  Test(int v) : value(v) &#123; std::cout &lt;&lt; &quot;ctor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;  ~Test() &#123; std::cout &lt;&lt; &quot;dtor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;&#125;;int main() &#123;  Test *arr = new Test[5]&#123;1, 2, 3, 4, 5&#125;;  delete[] arr;  return 0;&#125; arr 拿到的地址是 0x000055555556b2b8，指向的是第一个对象。 内存布局 可以看到小端序存储的五个 value。这...</div></div></div></a></nav><div class="relatedPosts"><div class="headline"><i class="fas fa-thumbs-up fa-fw"></i><span>Related Articles</span></div><div class="relatedPosts-list"><a class="pagination-related" href="/2026/01/23/L1-2-3%E7%BC%93%E5%AD%98%E6%8E%A2%E6%B5%8B/" title="L1&#x2F;2&#x2F;3缓存探测"><img class="cover" src="/image/avg_bandwidth_final.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-23</div><div class="info-item-2">L1&#x2F;2&#x2F;3缓存探测</div></div><div class="info-2"><div class="info-item-1">又是一篇cpu硬件探测的博客，这篇是探测L1（数据）/2/3缓存。 测试方法采取的方式如下：  每次读取：32 字节（一条 AVX2 指令） 每轮循环：256 字节 测试范围：在指定大小内循环（从1KB到32MB） 总读取量：1GB  核心代码listing_0152_cache_test.asm 1234567891011121314151617181920212223242526272829Read_32x8:    xor r9, r9    mov rax, rdx    align 64.loop:    ; Read 256 bytes    vmovdqu ymm0, [rax]    vmovdqu ymm0, [rax + 0x20]    vmovdqu ymm0, [rax + 0x40]    vmovdqu ymm0, [rax + 0x60]    vmovdqu ymm0, [rax + 0x80]    vmovdqu ymm0, [rax + 0xa0]    vmovdqu ymm0, [rax + 0xc0]    vmovdqu ymm0,...</div></div></div></a><a class="pagination-related" href="/2026/01/14/Virtually-Indexed-Physically-Tagged/" title="Virtually Indexed, Physically Tagged (VIPT)"><img class="cover" src="/image/xnbj.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-14</div><div class="info-item-2">Virtually Indexed, Physically Tagged (VIPT)</div></div><div class="info-2"><div class="info-item-1">VIPT (Virtually Indexed, Physically Tagged) 是一种在 L1 Cache 上的主流设计。它将内存寻址中的部分操作由串行改为并行，从而大幅缩短了从 Cache 获取数据的时间。 内存访问的核心组件在 CPU 执行 Load/Store 指令进行内存读写时，主要涉及两个核心组件：LSU 和 MMU。  LSU (Load Store Unit)：位于 CPU 流水线的后端，专门负责处理所有的加载（Load）和存储（Store）指令。 MMU (Memory Management Unit)：内存管理单元，负责虚拟地址到物理地址的转换。   VIPT 的工作流程使用 VIPT 后，Load/Store 指令查找物理地址的流程如下： LSU 拿到一条指令并计算出目标 虚拟地址 后，会 并行 进行以下两个操作：  MMU 查物理地址 (TLB Lookup)：  LSU 将虚拟地址发给 MMU。 MMU 首先在 TLB (Translation Lookaside Buffer) 中寻找对应的 VPN (Virtual Page Number)。 ...</div></div></div></a><a class="pagination-related" href="/2026/01/27/%E7%BB%84%E7%9B%B8%E8%BF%9E%E5%BA%A6%E6%8E%A2%E6%B5%8B/" title="L1 Cache 组相联度探测"><img class="cover" src="/image/%E5%9B%BE%E7%89%871.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-27</div><div class="info-item-2">L1 Cache 组相联度探测</div></div><div class="info-2"><div class="info-item-1">这篇博客主要介绍一种在已知 L1 Data Cache 大小的情况下，探测其 组相联度 (Associativity) 的方法。 背景其实组相联度通常不需要”探测”，因为现代 CPU 为了支持 VIPT (Virtually Indexed, Physically Tagged)，通常遵循以下公式：  \text{Cache总大小} / \text{组相联度} \leq \text{页大小} (4KB)为了最大化 Cache 容量和 Set 数量，设计时通常取等号。例如，Golden Cove 的 P-Core L1 Data Cache 大小为 48KB。根据公式 $48KB / \text{Ways} = 4KB$，很明显它的组相联度就是 12 路。  关于 VIPT 的详细解释，可以参考我的另一篇博客：Virtually Indexed, Physically Tagged  那么，有没有一种不通过计算，而是通过编写测试代码的方式来探测验证这一结论呢？ 答案是有的。这种方法虽然不能给出精确数值，但能通过性能特征推断出大致范围。 探测原理测试方法的核心思想是：制造 Cache...</div></div></div></a><a class="pagination-related" href="/2026/01/24/Alignment/" title="Alignment"><img class="cover" src="/image/data_alignment_avg_bw.svg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-24</div><div class="info-item-2">Alignment</div></div><div class="info-2"><div class="info-item-1">这篇博客来聊一个比较重要的概念：对齐 (Alignment)。 在 CPU 执行代码的过程中，一个比较严重的性能瓶颈就是 Back-end Memory Bound（后端访存延迟）。 Intel Haswell 访存延迟参考为了有个大概的概念，我们先看下 Intel Haswell 架构的具体访存延迟数据：  数据来源: 7-cpu.com - Haswell配置: Intel i7-4770 (Haswell), 3.4 GHz, RAM 32 GB (PC3-12800 cl11 cr2)   L1 Data cache: 32 KB, 64 B/line, 8-WAY L1 Instruction cache: 32 KB, 64 B/line, 8-WAY L2 cache: 256 KB, 64 B/line, 8-WAY L3 cache: 8 MB, 64 B/line  具体延迟如下：  L1 Data Cache Latency: 4 cycles (pointer simple access) 5 cycles (complex address calcula...</div></div></div></a><a class="pagination-related" href="/2026/02/02/2026-1-26-2026-2-1-%E5%91%A8%E6%8A%A5/" title="2026.1.26 - 2026.2.1 周报"><img class="cover" src="/image/weekly_report_4.png" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-02-02</div><div class="info-item-2">2026.1.26 - 2026.2.1 周报</div></div><div class="info-2"><div class="info-item-1">L1 Cache 组相联度探测做了一下 L1 Cache 组相联度探测。使用不同的步长访问内存，制造 L1 Cache 冲突，在特定步长下会大幅下降。 主要原因就是：  特定步长下降是 Cache 冲突，导致 L1 Cache 不够放了，挤到 L2 了。 整体下降是 Data TLB 不够用了，因为到后面步长变大，涉及的页面数变多了。   能用的 Set 数量 = 总 Set 数 / GCD(总 Set 数, stride/64)  stride = 256 的时候 set 只能用到 1/4 stride = 4096 的时候，set 只能用到 1/64，所以在这里到达最低点    Softmax 算子的实现及优化找了一些课程学习了一下 CUDA 编程，主要做了 Softmax 算子的实现及优化。 优化过程为： 1. CPU 实现代码层面完全串行，只有在 CPU 后端没有依赖链的时候有单核内部的微指令级别的并行。 2. GPU Kernel 1 实现基本就是原封不动地搬到了 GPU 上，只不过我们给它设置了 N 个线程块，每个线程块一个线程，用 int i = blockIdx....</div></div></div></a><a class="pagination-related" href="/2026/01/22/Pipeline-Depth-CPU-Frequency/" title="Pipeline Depth &amp; CPU Frequency"><img class="cover" src="/image/chip.jpg" alt="cover"><div class="info text-center"><div class="info-1"><div class="info-item-1"><i class="far fa-calendar-alt fa-fw"></i> 2026-01-22</div><div class="info-item-2">Pipeline Depth &amp; CPU Frequency</div></div><div class="info-2"><div class="info-item-1">这篇博客简单介绍两个概念：流水线深度 和 频率。 基本概念 流水线深度：一条指令流经 CPU 的过程被切分出来的步骤数量 频率：每秒钟流水线向前推进多少个步骤   现代流水线设计现代教学用的 CPU 模拟器一般是 5 级流水线，比如 gem5 中的一个 CPU 模型：O3CPU - 5 级乱序流水线 1Fetch → Decode → Rename → IEW → Commit 以本机的性能核 Golden Cove（2021 年推出）为例，根据 μops cache 是否命中、指令复杂度等因素，流水线深度在 14~19 级。  历史教训：Pentium 4 的 NetBurst 架构在历史上，CPU 流水线深度并不是稳步增长的。 20 多年前，英特尔曾两次尝试用完全不同的东西来取代其坚固但陈旧的 P6 微架构：  安腾 (Itanium)：避免与乱序执行和可变长度解码相关的复杂性，提供非常宽的顺序执行 奔腾 4 (Pentium 4)：基于 90nm（”Prescott”）工艺，于 2004 年推出，流水线深度达到了惊人的 31 级  10 GHz 的梦想破灭Pentium 4...</div></div></div></a></div></div></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget" id="card-toc"><div class="item-headline"><i class="fas fa-stream"></i><span>Contents</span><span class="toc-percentage"></span></div><div class="toc-content"><ol class="toc"><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E7%9A%84%E7%A7%8D%E7%B1%BB"><span class="toc-number">1.</span> <span class="toc-text">缓存的种类</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%98%A0%E5%B0%84%E6%96%B9%E5%BC%8F"><span class="toc-number">2.</span> <span class="toc-text">缓存映射方式</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E8%A1%8C%E7%BD%AE%E6%8D%A2%E7%AE%97%E6%B3%95"><span class="toc-number">3.</span> <span class="toc-text">缓存行置换算法</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%E5%8D%8F%E8%AE%AE"><span class="toc-number">4.</span> <span class="toc-text">缓存一致性协议</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#MESI"><span class="toc-number">4.1.</span> <span class="toc-text">MESI</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MOESI%EF%BC%88AMD-%E9%87%87%E7%94%A8%EF%BC%89"><span class="toc-number">4.2.</span> <span class="toc-text">MOESI（AMD 采用）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#MESIF%EF%BC%88Intel-%E9%87%87%E7%94%A8%EF%BC%89"><span class="toc-number">4.3.</span> <span class="toc-text">MESIF（Intel 采用）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%B8%BA%E4%BB%80%E4%B9%88-Intel-%E4%B8%8D%E7%94%A8-Owned-O-%E7%8A%B6%E6%80%81%EF%BC%9F"><span class="toc-number">4.4.</span> <span class="toc-text">为什么 Intel 不用 Owned (O) 状态？</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Store-Buffer"><span class="toc-number">5.</span> <span class="toc-text">Store Buffer</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#Invalidate-Queue"><span class="toc-number">6.</span> <span class="toc-text">Invalidate Queue</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%83%8C%E6%99%AF%E9%97%AE%E9%A2%98"><span class="toc-number">6.1.</span> <span class="toc-text">背景问题</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E8%A7%A3%E5%86%B3%E6%96%B9%E6%A1%88"><span class="toc-number">6.2.</span> <span class="toc-text">解决方案</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%89%AF%E4%BD%9C%E7%94%A8%EF%BC%88%E8%AF%BB%E5%88%B0%E6%97%A7%E5%80%BC%EF%BC%89"><span class="toc-number">6.3.</span> <span class="toc-text">副作用（读到旧值）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%AF%B9%E6%AF%94-Store-Buffer-%E5%92%8C-Invalidate-Queue"><span class="toc-number">6.4.</span> <span class="toc-text">对比 Store Buffer 和 Invalidate Queue</span></a></li></ol></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E5%86%85%E5%AD%98%E5%B1%8F%E9%9A%9C"><span class="toc-number">7.</span> <span class="toc-text">内存屏障</span></a></li><li class="toc-item toc-level-2"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E4%B8%AD%E7%9A%84%E4%B8%80%E4%BA%9B%E9%97%AE%E9%A2%98"><span class="toc-number">8.</span> <span class="toc-text">缓存中的一些问题</span></a><ol class="toc-child"><li class="toc-item toc-level-3"><a class="toc-link" href="#%E4%BC%AA%E5%85%B1%E4%BA%AB%EF%BC%88False-Sharing%EF%BC%89"><span class="toc-number">8.1.</span> <span class="toc-text">伪共享（False Sharing）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E5%86%B7%E5%90%AF%E5%8A%A8%EF%BC%88Cold-Start%EF%BC%89"><span class="toc-number">8.2.</span> <span class="toc-text">冷启动（Cold Start）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E6%B1%A1%E6%9F%93%EF%BC%88Cache-Pollution%EF%BC%89"><span class="toc-number">8.3.</span> <span class="toc-text">缓存污染（Cache Pollution）</span></a></li><li class="toc-item toc-level-3"><a class="toc-link" href="#%E7%BC%93%E5%AD%98%E8%A1%8C%E6%8A%96%E5%8A%A8%EF%BC%88Cache-Thrashing%EF%BC%89"><span class="toc-number">8.4.</span> <span class="toc-text">缓存行抖动（Cache Thrashing）</span></a></li></ol></li></ol></div></div><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="readmode" type="button" title="Reading Mode"><i class="fas fa-book-open"></i></button><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button class="close" id="mobile-toc-button" type="button" title="Table of Contents"><i class="fas fa-list-ul"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>(() => {
+  const loadMathjax = () => {
+    if (!window.MathJax) {
+      window.MathJax = {
+        loader: {
+          load: [
+            // Four font extension packages (optional)
+            //- '[tex]/bbm',
+            //- '[tex]/bboldx',
+            //- '[tex]/dsfont',
+            '[tex]/mhchem'
+          ],
+          paths: {
+            'mathjax-newcm': '[mathjax]/../@mathjax/mathjax-newcm-font',
+
+            //- // Four font extension packages (optional)
+            //- 'mathjax-bbm-extension': '[mathjax]/../@mathjax/mathjax-bbm-font-extension',
+            //- 'mathjax-bboldx-extension': '[mathjax]/../@mathjax/mathjax-bboldx-font-extension',
+            //- 'mathjax-dsfont-extension': '[mathjax]/../@mathjax/mathjax-dsfont-font-extension',
+            'mathjax-mhchem-extension': '[mathjax]/../@mathjax/mathjax-mhchem-font-extension'
+          }
+        },
+        output: {
+          font: 'mathjax-newcm',
+        },
+        tex: {
+          inlineMath: [['$', '$'], ['\\(', '\\)']],
+          tags: 'none',
+          packages: {
+            '[+]': [
+              'mhchem'
+            ]
+          }
+        },
+        chtml: {
+          scale: 1.1
+        },
+        options: {
+          enableMenu: true,
+          menuOptions: {
+            settings: {
+              enrich: false  // Turn off Braille and voice narration text automatic generation
+            }
+          },
+          renderActions: {
+            findScript: [10, doc => {
+              for (const node of document.querySelectorAll('script[type^="math/tex"]')) {
+                const display = !!node.type.match(/; *mode=display/)
+                const math = new doc.options.MathItem(node.textContent, doc.inputJax[0], display)
+                const text = document.createTextNode('')
+                node.parentNode.replaceChild(text, node)
+                math.start = {node: text, delim: '', n: 0}
+                math.end = {node: text, delim: '', n: 0}
+                doc.math.push(math)
+              }
+            }, '']
+          }
+        }
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/mathjax@4.0.0/tex-mml-chtml.min.js'
+      script.id = 'MathJax-script'
+      script.async = true
+      document.head.appendChild(script)
+    } else {
+      MathJax.startup.document.state(0)
+      MathJax.texReset()
+      MathJax.typesetPromise()
+    }
+  }
+
+  btf.addGlobalFn('encrypt', loadMathjax, 'mathjax')
+  window.pjax ? loadMathjax() : window.addEventListener('load', loadMathjax)
+})()</script></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>

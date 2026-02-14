@@ -1,0 +1,314 @@
+<!DOCTYPE html><html lang="en" data-theme="light"><head><meta charset="UTF-8"><meta http-equiv="X-UA-Compatible" content="IE=edge"><meta name="viewport" content="width=device-width, initial-scale=1.0,viewport-fit=cover"><title>0X7C00</title><meta name="author" content="nv3ifu"><meta name="copyright" content="nv3ifu"><meta name="format-detection" content="telephone=no"><meta name="theme-color" content="#ffffff"><meta property="og:type" content="website">
+<meta property="og:title" content="0X7C00">
+<meta property="og:url" content="https://nv3ifu.github.io/page/3/index.html">
+<meta property="og:site_name" content="0X7C00">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://nv3ifu.github.io/image/nv.jpg">
+<meta property="article:author" content="nv3ifu">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://nv3ifu.github.io/image/nv.jpg"><script type="application/ld+json"></script><link rel="shortcut icon" href="/img/favicon.ico"><link rel="canonical" href="https://nv3ifu.github.io/page/3/index.html"><link rel="preconnect" href="//cdn.jsdelivr.net"/><link rel="preconnect" href="//busuanzi.ibruce.info"/><link rel="stylesheet" href="/css/index.css?v=5.5.3"><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@7.1.0/css/all.min.css"><script>
+    (() => {
+      
+    const saveToLocal = {
+      set: (key, value, ttl) => {
+        if (!ttl) return
+        const expiry = Date.now() + ttl * 86400000
+        localStorage.setItem(key, JSON.stringify({ value, expiry }))
+      },
+      get: key => {
+        const itemStr = localStorage.getItem(key)
+        if (!itemStr) return undefined
+        const { value, expiry } = JSON.parse(itemStr)
+        if (Date.now() > expiry) {
+          localStorage.removeItem(key)
+          return undefined
+        }
+        return value
+      }
+    }
+
+    window.btf = {
+      saveToLocal,
+      getScript: (url, attr = {}) => new Promise((resolve, reject) => {
+        const script = document.createElement('script')
+        script.src = url
+        script.async = true
+        Object.entries(attr).forEach(([key, val]) => script.setAttribute(key, val))
+        script.onload = script.onreadystatechange = () => {
+          if (!script.readyState || /loaded|complete/.test(script.readyState)) resolve()
+        }
+        script.onerror = reject
+        document.head.appendChild(script)
+      }),
+      getCSS: (url, id) => new Promise((resolve, reject) => {
+        const link = document.createElement('link')
+        link.rel = 'stylesheet'
+        link.href = url
+        if (id) link.id = id
+        link.onload = link.onreadystatechange = () => {
+          if (!link.readyState || /loaded|complete/.test(link.readyState)) resolve()
+        }
+        link.onerror = reject
+        document.head.appendChild(link)
+      }),
+      addGlobalFn: (key, fn, name = false, parent = window) => {
+        if (!false && key.startsWith('pjax')) return
+        const globalFn = parent.globalFn || {}
+        globalFn[key] = globalFn[key] || {}
+        globalFn[key][name || Object.keys(globalFn[key]).length] = fn
+        parent.globalFn = globalFn
+      }
+    }
+  
+      
+      const activateDarkMode = () => {
+        document.documentElement.setAttribute('data-theme', 'dark')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#0d0d0d')
+        }
+      }
+      const activateLightMode = () => {
+        document.documentElement.setAttribute('data-theme', 'light')
+        if (document.querySelector('meta[name="theme-color"]') !== null) {
+          document.querySelector('meta[name="theme-color"]').setAttribute('content', '#ffffff')
+        }
+      }
+
+      btf.activateDarkMode = activateDarkMode
+      btf.activateLightMode = activateLightMode
+
+      const theme = saveToLocal.get('theme')
+    
+          theme === 'dark' ? activateDarkMode() : theme === 'light' ? activateLightMode() : null
+        
+      
+      const asideStatus = saveToLocal.get('aside-status')
+      if (asideStatus !== undefined) {
+        document.documentElement.classList.toggle('hide-aside', asideStatus === 'hide')
+      }
+    
+      
+    const detectApple = () => {
+      if (/iPad|iPhone|iPod|Macintosh/.test(navigator.userAgent)) {
+        document.documentElement.classList.add('apple')
+      }
+    }
+    detectApple()
+  
+    })()
+  </script><script>const GLOBAL_CONFIG = {
+  root: '/',
+  algolia: undefined,
+  localSearch: undefined,
+  translate: undefined,
+  highlight: {"plugin":"highlight.js","highlightCopy":true,"highlightLang":true,"highlightHeightLimit":false,"highlightFullpage":false,"highlightMacStyle":false},
+  copy: {
+    success: 'Copy Successful',
+    error: 'Copy Failed',
+    noSupport: 'Browser Not Supported'
+  },
+  relativeDate: {
+    homepage: false,
+    post: false
+  },
+  runtime: '',
+  dateSuffix: {
+    just: 'Just now',
+    min: 'minutes ago',
+    hour: 'hours ago',
+    day: 'days ago',
+    month: 'months ago'
+  },
+  copyright: undefined,
+  lightbox: 'null',
+  Snackbar: undefined,
+  infinitegrid: {
+    js: 'https://cdn.jsdelivr.net/npm/@egjs/infinitegrid@4.12.0/dist/infinitegrid.min.js',
+    buttonText: 'Load More'
+  },
+  isPhotoFigcaption: false,
+  islazyloadPlugin: false,
+  isAnchor: false,
+  percent: {
+    toc: true,
+    rightside: false,
+  },
+  autoDarkmode: false
+}</script><script id="config-diff">var GLOBAL_CONFIG_SITE = {
+  title: '0X7C00',
+  isHighlightShrink: false,
+  isToc: false,
+  pageType: 'home'
+}</script><link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+<style>
+  #page-header.full_page {
+    position: relative;
+    overflow: hidden;
+  }
+  #page-header.full_page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.2);
+    z-index: 1;
+  }
+  .video-background {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    transform: translateX(-50%) translateY(-50%);
+    z-index: 0;
+    object-fit: cover;
+  }
+  #site-info {
+    position: relative;
+    z-index: 2;
+  }
+  /* 修改网站标题样式 */
+  #site-title {
+    font-size: 3.5rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    font-weight: normal !important;
+    text-shadow: 3px 3px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 3px !important;
+  }
+  /* 修改打字机副标题样式 */
+  #subtitle {
+    font-size: 1.8rem !important;
+    font-family: 'VT323', 'Press Start 2P', 'Courier New', monospace !important;
+    text-shadow: 2px 2px 0px rgba(0, 0, 0, 0.8) !important;
+    letter-spacing: 1px !important;
+    line-height: 1.8 !important;
+  }
+  /* 响应式设计 - 移动端适配 */
+  @media (max-width: 768px) {
+    #site-title {
+      font-size: 3rem !important;
+    }
+    #subtitle {
+      font-size: 1.5rem !important;
+    }
+  }
+  /* 调大内容区域宽度 */
+  .layout {
+    max-width: 1600px !important;
+  }
+  .layout > div:first-child {
+    width: 80% !important;
+  }
+</style>
+<meta name="generator" content="Hexo 7.0.0"></head><body><div class="bg-animation" id="web_bg" style="background-image: url(/image/win.png);"></div><div id="sidebar"><div id="menu-mask"></div><div id="sidebar-menus"><div class="avatar-img text-center"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="site-data text-center"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div></div></div><div class="page" id="body-wrap"><header class="full_page" id="page-header"><nav id="nav"><span id="blog-info"><a class="nav-site-title" href="/"><span class="site-name">0X7C00</span></a></span><div id="menus"><div class="menus_items"><div class="menus_item"><a class="site-page" href="/"><i class="fa-fw fas fa-home"></i><span> Home</span></a></div></div><div id="toggle-menu"><span class="site-page"><i class="fas fa-bars fa-fw"></i></span></div></div></nav><div id="site-info"><h1 id="site-title">0X7C00</h1><div id="site-subtitle"><span id="subtitle"></span></div><div id="site_social_icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div id="scroll-down"><i class="fas fa-angle-down scroll-down-effects"></i></div></header><main class="layout" id="content-inner"><div class="recent-posts nc" id="recent-posts"><div class="recent-post-items"><div class="recent-post-item"><div class="post_cover left"><a href="/2026/01/14/Virtually-Indexed-Physically-Tagged/" title="Virtually Indexed, Physically Tagged (VIPT)"><img class="post-bg" src="/image/xnbj.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Virtually Indexed, Physically Tagged (VIPT)"></a></div><div class="recent-post-info"><a class="article-title" href="/2026/01/14/Virtually-Indexed-Physically-Tagged/" title="Virtually Indexed, Physically Tagged (VIPT)">Virtually Indexed, Physically Tagged (VIPT)</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2026-01-14T13:16:41.000Z" title="Created 2026-01-14 21:16:41">2026-01-14</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="content">VIPT (Virtually Indexed, Physically Tagged) 是一种在 L1 Cache 上的主流设计。它将内存寻址中的部分操作由串行改为并行，从而大幅缩短了从 Cache 获取数据的时间。 内存访问的核心组件在 CPU 执行 Load/Store 指令进行内存读写时，主要涉及两个核心组件：LSU 和 MMU。  LSU (Load Store Unit)：位于 CPU 流水线的后端，专门负责处理所有的加载（Load）和存储（Store）指令。 MMU (Memory Management Unit)：内存管理单元，负责虚拟地址到物理地址的转换。   VIPT 的工作流程使用 VIPT 后，Load/Store 指令查找物理地址的流程如下： LSU 拿到一条指令并计算出目标 虚拟地址 后，会 并行 进行以下两个操作：  MMU 查物理地址 (TLB Lookup)：  LSU 将虚拟地址发给 MMU。 MMU 首先在 TLB (Translation Lookaside Buffer) 中寻找对应的 VPN (Virtual Page Number)。 ...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2026/01/13/SIMD/" title="Single Instruction, Multiple Data (SIMD)"><img class="post-bg" src="/image/SIMD.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Single Instruction, Multiple Data (SIMD)"></a></div><div class="recent-post-info"><a class="article-title" href="/2026/01/13/SIMD/" title="Single Instruction, Multiple Data (SIMD)">Single Instruction, Multiple Data (SIMD)</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2026-01-13T13:44:15.000Z" title="Created 2026-01-13 21:44:15">2026-01-13</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="content">本文为学习 Computer Enhance - Single Instruction, Multiple Data 的整理。 回顾与引入在前一篇博客中，我们通过 打破指令依赖链，让 CPU 可以并行执行 add 操作，从而提升了性能。 在这篇博客中，我们回到第一种优化方式：通过使用 SIMD 指令来减少指令总数。 SIMD 全称 Single Instruction, Multiple Data（单指令多数据），它的意思正如字面所示：CPU 用一条指令同时处理多份数据。  SIMD 基础常见的 SIMD 指令集包括 SSE、AVX 和 AVX-512。指令宽度依次加倍，分别是 128 bit、256 bit 和 512 bit。宽度决定了一条指令一次性可以计算的数据长度。 现在的家用电脑一般都支持到 AVX2。下图是我的 CPU 数据，可以看到对 SIMD 指令集的支持情况：  寄存器对应关系SIMD 指令会使用专用的寄存器做计算：  SSE (128位): 使用 XMM0 ~ XMM15 AVX (256位): 使用 YMM0 ~ YMM15 XMM0 是 YMM0 的低 1...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2026/01/13/Break-the-serial-dependency-chain/" title="Break the Serial Dependency Chain"><img class="post-bg" src="/image/Break.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Break the Serial Dependency Chain"></a></div><div class="recent-post-info"><a class="article-title" href="/2026/01/13/Break-the-serial-dependency-chain/" title="Break the Serial Dependency Chain">Break the Serial Dependency Chain</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2026-01-12T19:04:21.000Z" title="Created 2026-01-13 03:04:21">2026-01-13</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="content">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 前情回顾上一篇博客中，我们通过循环展开进行了示例代码的优化，也遇到了串行依赖链的问题。这篇博客就来进一步说明。 之前的优化代码： 123456789101112u32 Unroll4Scalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; Index += 4)    &#123;        Sum += Input[Index];        Sum += Input[Index + 1];        Sum += Input[Index + 2];        Sum += Input[Index + 3];    &#125;    return Sum;&#125;  什么是串行依赖链？每个 add 的第一个操作数始终是同一个累加值 Sum。它既是 add 的源，也是其目的地。 这部分代码是一个 串行依赖链：整个求和过程中的每一次...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2026/01/13/Unrolling-a-loop/" title="Unrolling a Loop"><img class="post-bg" src="/image/unrolling.jpg" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Unrolling a Loop"></a></div><div class="recent-post-info"><a class="article-title" href="/2026/01/13/Unrolling-a-loop/" title="Unrolling a Loop">Unrolling a Loop</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2026-01-12T18:19:38.000Z" title="Created 2026-01-13 02:19:38">2026-01-13</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="content">本文为学习 Computer Enhance - Instructions Per Clock 的整理。 问题引入有如下代码： 1234567891011typedef unsigned int u32;u32 SingleScalar(u32 Count, u32 *Input)&#123;    u32 Sum = 0;    for (u32 Index = 0; Index &lt; Count; ++Index)    &#123;        Sum += Input[Index];    &#125;    return Sum;&#125; 每颗 CPU 在理论上每个时钟周期都能执行一定数量的指令，而我们的工作负载越接近这个数量，就越能发挥这颗 CPU 的全部潜力。 上述代码中，可以认为 加法是工作负载，而 循环是一种”浪费”。下面是上述代码生成的汇编： 1234567891011121314151617SingleScalar:    test    ecx, ecx                ; if (Count == 0)    je      .L...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2026/01/12/Waste/" title="Waste"><img class="post-bg" src="/image/waste.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Waste"></a></div><div class="recent-post-info"><a class="article-title" href="/2026/01/12/Waste/" title="Waste">Waste</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2026-01-12T13:44:55.000Z" title="Created 2026-01-12 21:44:55">2026-01-12</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/">性能优化</a></span></div><div class="content">本文为学习 Computer Enhance - Waste 的整理。 核心观点提升程序性能只有两条路：  减少要求 CPU 执行的指令总数 调整这些指令，让它们更高效地穿过 CPU  除此之外，别无他法：要么减少数量，要么加快速度。 CPU 正在执行的指令中，存在大量指令，它们所做的事情，与实际程序逻辑毫无关系。  案例：计算 A + B运行在两个较为极端的环境下：  C 语言：编译为原生机器码，运行在 CPU 上 Python：编译为字节码，运行在 CPython 虚拟机上（没有 JIT）   C 语言实现测试代码： 12345678910int __declspec(noinline) add(int A, int B)&#123;    return A + B;&#125;#pragma optimize(&quot;&quot;, off)int main(int ArgCount, char **Args)&#123;    return add(1234, 5678);&#125; 可以看到为了实现 A + B，只使用了 一条 ADD 指令。   Python 实...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2025/12/24/Cache/" title="Cache"><img class="post-bg" src="/image/cache.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Cache"></a></div><div class="recent-post-info"><a class="article-title" href="/2025/12/24/Cache/" title="Cache">Cache</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2025-12-23T17:53:00.000Z" title="Created 2025-12-24 01:53:00">2025-12-24</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="content">DRAM 读取速度太慢，所以就有了缓存。但同时也引入了缓存抖动、伪共享、读后写、一致性等需要解决的问题，这篇博客中就来介绍下相关的概念。 缓存的种类 L1：指令缓存、数据缓存，核独占 L2：数据指令通用，核独占 L3：核共享  这里以包含式 L3 为例：  L3 包含 L1/L2 的所有数据 L3 的目录记录：这行在哪些核的 L1/L2 里  举例：Core 1 想读一个地址：  查 L3 目录 发现 Core 0 有 Modified 副本 通知 Core 0 写回  按照 L1 → L2 → L3 顺序访问，一个 miss 了就下一个，访问速度递减，大小递增。 缓存映射方式缓存映射方式主要有三种：  直接映射（1 路组相联） 组相联 全相联（缓存行数 = 路数）  下面的动画中详细解释： 👉 点击查看组相联缓存动画演示 缓存行置换算法常用的是 Tree PLRU（用二叉树近似 LRU）。为什么不用纯 LRU 呢？是因为硬件成本的问题：  存储缓存行状态需要额外的空间  N 路组相联需要的空间 = log₂(N!) × 组数 = log₂(N!) × (缓存总大小 / 缓存行...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2025/12/21/c-new/" title="C++ new"><img class="post-bg" src="/image/image12.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="C++ new"></a></div><div class="recent-post-info"><a class="article-title" href="/2025/12/21/c-new/" title="C++ new">C++ new</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2025-12-20T16:41:04.000Z" title="Created 2025-12-21 00:41:04">2025-12-21</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/C-C-%E7%BC%96%E7%A8%8B/">C/C++ 编程</a></span></div><div class="content">C++ 中 new 是如何工作的呢？ 创建对象数组示例以创建一个对象数组举例： 1234567891011121314#include &lt;iostream&gt;class Test &#123;public:  int value;  Test(int v) : value(v) &#123; std::cout &lt;&lt; &quot;ctor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;  ~Test() &#123; std::cout &lt;&lt; &quot;dtor&quot; &lt;&lt; value &lt;&lt; std::endl; &#125;&#125;;int main() &#123;  Test *arr = new Test[5]&#123;1, 2, 3, 4, 5&#125;;  delete[] arr;  return 0;&#125; arr 拿到的地址是 0x000055555556b2b8，指向的是第一个对象。 内存布局 可以看到小端序存储的五个 value。这...</div></div></div><div class="recent-post-item"><div class="post_cover right"><a href="/2025/12/18/gem5%E5%88%86%E6%94%AF%E9%A2%84%E6%B5%8B%E2%94%80%E2%94%80LocalBP/" title="gem5分支预测──LocalBP"><img class="post-bg" src="/image/yuce.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="gem5分支预测──LocalBP"></a></div><div class="recent-post-info"><a class="article-title" href="/2025/12/18/gem5%E5%88%86%E6%94%AF%E9%A2%84%E6%B5%8B%E2%94%80%E2%94%80LocalBP/" title="gem5分支预测──LocalBP">gem5分支预测──LocalBP</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2025-12-17T17:28:32.000Z" title="Created 2025-12-18 01:28:32">2025-12-18</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/">计算机体系结构</a></span></div><div class="content">LocalBP 是 gem5 中最简单的分支预测算法，代码在 src/cpu/pred/2bit_local.cc 主要组件1. 计数器表 (localCtrs)一个数组，每个元素是一个 2-bit 饱和计数器（可配置）。默认 1024 个表项（可配置），每个表项对应一个或多个分支指令（可能存在 hash 冲突）。这里以默认举例。 2. 2-bit 饱和计数器    状态值 二进制 含义 预测结果     0 00 Strongly Not Taken 不跳转   1 01 Weakly Not Taken 不跳转   2 10 Weakly Taken 跳转   3 11 Strongly Taken 跳转     判断规则：看最高位 (MSB)  MSB = 0 (值 0,1) → 预测不跳转 MSB = 1 (值 2,3) → 预测跳转  状态转换也很简单，跳转就 +1，没有跳转就 -1： 123456    +1 (taken)      +1 (taken)      +1 (taken)00 ───────────&gt; 01 ───────────&gt; 10 ...</div></div></div><div class="recent-post-item"><div class="post_cover left"><a href="/2025/12/16/%E6%AF%95%E8%AE%BE-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%B2%99%E7%AE%B1%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-1/" title="毕设──基于虚拟机的智能体沙箱的设计与实现(1)"><img class="post-bg" src="https://nv3ifu.github.io/image/image.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="毕设──基于虚拟机的智能体沙箱的设计与实现(1)"></a></div><div class="recent-post-info"><a class="article-title" href="/2025/12/16/%E6%AF%95%E8%AE%BE-%E5%9F%BA%E4%BA%8E%E8%99%9A%E6%8B%9F%E6%9C%BA%E7%9A%84%E6%99%BA%E8%83%BD%E4%BD%93%E6%B2%99%E7%AE%B1%E7%9A%84%E8%AE%BE%E8%AE%A1%E4%B8%8E%E5%AE%9E%E7%8E%B0-1/" title="毕设──基于虚拟机的智能体沙箱的设计与实现(1)">毕设──基于虚拟机的智能体沙箱的设计与实现(1)</a><div class="article-meta-wrap"><span class="post-meta-date"><i class="far fa-calendar-alt"></i><span class="article-meta-label">Created</span><time datetime="2025-12-15T20:54:07.000Z" title="Created 2025-12-16 04:54:07">2025-12-16</time></span><span class="article-meta"><span class="article-meta-separator">|</span><i class="fas fa-inbox"></i><a class="article-meta__categories" href="/categories/%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1/">毕业设计</a></span></div><div class="content">最近一直在学习 C++ 的代码相关知识。因为马上要交开题报告了，所以找了个空闲的时间看了下毕设相关的内容。 毕设就是个 Agent 代码执行沙箱，为什么要选这个题目呢？第一是对虚拟机这方面挺感兴趣的，第二就是之前在红队做过针对 Agent 代码执行的攻击，有一定了解。 技术方案选型目前阶段主要还是去选择用啥去实现这个沙箱，目前的话主要是试试下面这几种： 1. WASM启动很快，因为是进程级别的虚拟机，不涉及虚拟化乱七八糟的，开销很小，就是把不同语言编译为可以跑在 WASM 虚拟机上的字节码。 默认权限很小，只有纯计算和调用显式提供 API 的能力。但是兼容性不行，语言支持受限（尤其是本来就跑在虚拟机上的语言，需要把它的虚拟机编译为 WASM，然后跑在 WASM 虚拟机上），系统调用受限。并且不像 Docker，想要什么镜像直接拉下来就行，得去将想运行的组件编译为 WASM。 2. DockerDocker 主要就是选运行时：  runc：用 Linux 的 Namespace 和 Cgroups 做隔离、资源限制，不涉及虚拟化。好处就是快，缺点就是不够安全，因为内核共享，内核漏洞...</div></div></div></div><nav id="pagination"><div class="pagination"><a class="extend prev" rel="prev" href="/page/2/#content-inner"><i class="fas fa-chevron-left fa-fw"></i></a><a class="page-number" href="/">1</a><a class="page-number" href="/page/2/#content-inner">2</a><span class="page-number current">3</span></div></nav></div><div class="aside-content" id="aside-content"><div class="card-widget card-info text-center"><div class="avatar-img"><img src="/image/nv.jpg" onerror="this.onerror=null;this.src='/img/friend_404.gif'" alt="avatar"/></div><div class="author-info-name">nv3ifu</div><div class="author-info-description"></div><div class="site-data"><a href="/archives/"><div class="headline">Articles</div><div class="length-num">29</div></a><a href="/tags/"><div class="headline">Tags</div><div class="length-num">42</div></a><a href="/categories/"><div class="headline">Categories</div><div class="length-num">8</div></a></div><a id="card-info-btn" target="_blank" rel="noopener" href="https://github.com/nv3ifu"><i class="fab fa-github"></i><span>Follow Me</span></a><div class="card-info-social-icons"><a class="social-icon" href="https://0x7c00.notion.site" target="_blank" title="Notion"><i class="fab fa-notion" style="color: #000000;"></i></a><a class="social-icon" href="http://39.107.107.227:5000/" target="_blank" title="项目演示"><i class="fas fa-rocket" style="color: #FF6B6B;"></i></a></div></div><div class="card-widget card-announcement"><div class="item-headline"><i class="fas fa-bullhorn fa-shake"></i><span>Announcement</span></div><div class="announcement_content">This is my Blog</div></div><div class="sticky_layout"><div class="card-widget card-recent-post"><div class="item-headline"><i class="fas fa-history"></i><span>Recent Posts</span></div><div class="aside-list"><div class="aside-list-item"><a class="thumbnail" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具"><img src="/image/qemu-head.webp" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="基于qemu的系统调用插桩工具"/></a><div class="content"><a class="title" href="/2026/02/14/%E5%9F%BA%E4%BA%8Eqemu%E7%9A%84%E7%B3%BB%E7%BB%9F%E8%B0%83%E7%94%A8%E6%8F%92%E6%A1%A9%E5%B7%A5%E5%85%B7/" title="基于qemu的系统调用插桩工具">基于qemu的系统调用插桩工具</a><time datetime="2026-02-14T09:21:25.000Z" title="Created 2026-02-14 17:21:25">2026-02-14</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/10/project-demo-vids/" title="项目演示视频"><img src="/image/selected_work_retro.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="项目演示视频"/></a><div class="content"><a class="title" href="/2026/02/10/project-demo-vids/" title="项目演示视频">项目演示视频</a><time datetime="2026-02-09T17:18:25.000Z" title="Created 2026-02-10 01:18:25">2026-02-10</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA"><img src="/image/rat_ssa.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="RAT &amp; SSA"/></a><div class="content"><a class="title" href="/2026/02/08/RAT-SSA/" title="RAT &amp; SSA">RAT &amp; SSA</a><time datetime="2026-02-08T09:52:49.000Z" title="Created 2026-02-08 17:52:49">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO"><img src="/image/nrvo_rvo.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="Return in Memory &amp; URVO &amp; NRVO"/></a><div class="content"><a class="title" href="/2026/02/08/Return-in-Memory-RVO-NRVO/" title="Return in Memory &amp; URVO &amp; NRVO">Return in Memory &amp; URVO &amp; NRVO</a><time datetime="2026-02-07T16:01:20.000Z" title="Created 2026-02-08 00:01:20">2026-02-08</time></div></div><div class="aside-list-item"><a class="thumbnail" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查"><img src="/image/mutex_ida.png" onerror="this.onerror=null;this.src='/img/404.jpg'" alt="PLT Hook的死锁递归bug排查"/></a><div class="content"><a class="title" href="/2026/02/07/PLT-Hook%E7%9A%84%E6%AD%BB%E9%94%81%E9%80%92%E5%BD%92bug%E6%8E%92%E6%9F%A5/" title="PLT Hook的死锁递归bug排查">PLT Hook的死锁递归bug排查</a><time datetime="2026-02-07T03:03:46.000Z" title="Created 2026-02-07 11:03:46">2026-02-07</time></div></div></div></div><div class="card-widget card-categories"><div class="item-headline">
+            <i class="fas fa-folder-open"></i>
+            <span>Categories</span>
+            
+          </div>
+          <ul class="card-category-list" id="aside-cat-list">
+            <li class="card-category-list-item "><a class="card-category-list-link" href="/categories/C-C-%E7%BC%96%E7%A8%8B/"><span class="card-category-list-name">C/C++ 编程</span><span class="card-category-list-count">2</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E5%8D%9A%E5%AE%A2/"><span class="card-category-list-name">博客</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E5%91%A8%E6%8A%A5/"><span class="card-category-list-name">周报</span><span class="card-category-list-count">4</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/"><span class="card-category-list-name">性能优化</span><span class="card-category-list-count">6</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/"><span class="card-category-list-name">操作系统</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E6%AF%95%E4%B8%9A%E8%AE%BE%E8%AE%A1/"><span class="card-category-list-name">毕业设计</span><span class="card-category-list-count">1</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E4%BD%93%E7%B3%BB%E7%BB%93%E6%9E%84/"><span class="card-category-list-name">计算机体系结构</span><span class="card-category-list-count">7</span></a></li><li class="card-category-list-item "><a class="card-category-list-link" href="/categories/%E9%A1%B9%E7%9B%AE%E5%B1%95%E7%A4%BA/"><span class="card-category-list-name">项目展示</span><span class="card-category-list-count">2</span></a></li>
+          </ul></div><div class="card-widget card-tags"><div class="item-headline"><i class="fas fa-tags"></i><span>Tags</span></div><div class="card-tag-cloud"><a href="/tags/malloc/" style="font-size: 1.1em; color: #999">malloc</a> <a href="/tags/Hardware-Detection/" style="font-size: 1.1em; color: #999">Hardware Detection</a> <a href="/tags/%E6%BC%94%E7%A4%BA/" style="font-size: 1.18em; color: #999ca1">演示</a> <a href="/tags/%E6%B2%99%E7%AE%B1/" style="font-size: 1.1em; color: #999">沙箱</a> <a href="/tags/Cache/" style="font-size: 1.34em; color: #99a3b0">Cache</a> <a href="/tags/Intel/" style="font-size: 1.18em; color: #999ca1">Intel</a> <a href="/tags/CUDA/" style="font-size: 1.18em; color: #999ca1">CUDA</a> <a href="/tags/%E9%A1%B9%E7%9B%AE/" style="font-size: 1.18em; color: #999ca1">项目</a> <a href="/tags/Performance/" style="font-size: 1.5em; color: #99a9bf">Performance</a> <a href="/tags/Memory/" style="font-size: 1.1em; color: #999">Memory</a> <a href="/tags/Compiler/" style="font-size: 1.1em; color: #999">Compiler</a> <a href="/tags/Memory-Management/" style="font-size: 1.18em; color: #999ca1">Memory Management</a> <a href="/tags/gem5/" style="font-size: 1.1em; color: #999">gem5</a> <a href="/tags/Associativity/" style="font-size: 1.1em; color: #999">Associativity</a> <a href="/tags/GPU/" style="font-size: 1.1em; color: #999">GPU</a> <a href="/tags/Loop-Optimization/" style="font-size: 1.18em; color: #999ca1">Loop Optimization</a> <a href="/tags/%E8%99%9A%E6%8B%9F%E6%9C%BA/" style="font-size: 1.1em; color: #999">虚拟机</a> <a href="/tags/AI/" style="font-size: 1.1em; color: #999">AI</a> <a href="/tags/NRVO/" style="font-size: 1.1em; color: #999">NRVO</a> <a href="/tags/constexpr/" style="font-size: 1.1em; color: #999">constexpr</a> <a href="/tags/Linux-Kernel/" style="font-size: 1.1em; color: #999">Linux Kernel</a> <a href="/tags/RVO/" style="font-size: 1.1em; color: #999">RVO</a> <a href="/tags/ABI/" style="font-size: 1.1em; color: #999">ABI</a> <a href="/tags/%E5%91%A8%E6%8A%A5/" style="font-size: 1.1em; color: #999">周报</a> <a href="/tags/CPython/" style="font-size: 1.1em; color: #999">CPython</a> <a href="/tags/CPU-Architecture/" style="font-size: 1.42em; color: #99a6b7">CPU Architecture</a> <a href="/tags/Optimization/" style="font-size: 1.1em; color: #999">Optimization</a> <a href="/tags/SIMD/" style="font-size: 1.1em; color: #999">SIMD</a> <a href="/tags/C/" style="font-size: 1.26em; color: #999fa8">C++</a> <a href="/tags/MESI/" style="font-size: 1.1em; color: #999">MESI</a> <a href="/tags/Page-Fault/" style="font-size: 1.1em; color: #999">Page Fault</a> <a href="/tags/%E5%AE%89%E5%85%A8/" style="font-size: 1.1em; color: #999">安全</a> <a href="/tags/Branch-Prediction/" style="font-size: 1.1em; color: #999">Branch Prediction</a> <a href="/tags/Deep-Learning/" style="font-size: 1.1em; color: #999">Deep Learning</a> <a href="/tags/GCC/" style="font-size: 1.1em; color: #999">GCC</a> <a href="/tags/%E5%8D%9A%E5%AE%A2/" style="font-size: 1.1em; color: #999">博客</a> <a href="/tags/SSE/" style="font-size: 1.1em; color: #999">SSE</a> <a href="/tags/Windows-Internals/" style="font-size: 1.1em; color: #999">Windows Internals</a> <a href="/tags/AVX/" style="font-size: 1.1em; color: #999">AVX</a> <a href="/tags/Pipeline/" style="font-size: 1.1em; color: #999">Pipeline</a></div></div><div class="card-widget card-archives">
+    <div class="item-headline">
+      <i class="fas fa-archive"></i>
+      <span>Archives</span>
+      
+    </div>
+  
+    <ul class="card-archive-list">
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/02/">
+            <span class="card-archive-list-date">
+              February 2026
+            </span>
+            <span class="card-archive-list-count">8</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2026/01/">
+            <span class="card-archive-list-date">
+              January 2026
+            </span>
+            <span class="card-archive-list-count">17</span>
+          </a>
+        </li>
+      
+        <li class="card-archive-list-item">
+          <a class="card-archive-list-link" href="/archives/2025/12/">
+            <span class="card-archive-list-date">
+              December 2025
+            </span>
+            <span class="card-archive-list-count">4</span>
+          </a>
+        </li>
+      
+    </ul>
+  </div><div class="card-widget card-webinfo"><div class="item-headline"><i class="fas fa-chart-line"></i><span>Website Info</span></div><div class="webinfo"><div class="webinfo-item"><div class="item-name">Article Count :</div><div class="item-count">29</div></div><div class="webinfo-item"><div class="item-name">Unique Visitors :</div><div class="item-count" id="busuanzi_value_site_uv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Page Views :</div><div class="item-count" id="busuanzi_value_site_pv"><i class="fa-solid fa-spinner fa-spin"></i></div></div><div class="webinfo-item"><div class="item-name">Last Update :</div><div class="item-count" id="last-push-date" data-lastPushDate="2026-02-14T12:13:30.495Z"><i class="fa-solid fa-spinner fa-spin"></i></div></div></div></div></div></div></main><footer id="footer"><div class="footer-other"><div class="footer-copyright"><span class="copyright">&copy;&nbsp;2025 - 2026 By nv3ifu</span><span class="framework-info"><span>Framework </span><a target="_blank" rel="noopener" href="https://hexo.io">Hexo 7.0.0</a><span class="footer-separator">|</span><span>Theme </span><a target="_blank" rel="noopener" href="https://github.com/jerryc127/hexo-theme-butterfly">Butterfly 5.5.3</a></span></div></div></footer></div><div id="rightside"><div id="rightside-config-hide"><button id="darkmode" type="button" title="Toggle Between Light and Dark Mode"><i class="fas fa-adjust"></i></button><button id="hide-aside-btn" type="button" title="Toggle Between Single-column and Double-column"><i class="fas fa-arrows-alt-h"></i></button></div><div id="rightside-config-show"><button id="rightside-config" type="button" title="Settings"><i class="fas fa-cog fa-spin"></i></button><button id="go-up" type="button" title="Back to Top"><span class="scroll-percent"></span><i class="fas fa-arrow-up"></i></button></div></div><div><script src="/js/utils.js?v=5.5.3"></script><script src="/js/main.js?v=5.5.3"></script><div class="js-pjax"><script>window.typedJSFn = {
+  init: str => {
+    window.typed = new Typed('#subtitle', Object.assign({
+      strings: str,
+      startDelay: 300,
+      typeSpeed: 150,
+      loop: true,
+      backSpeed: 50,
+    }, {"typeSpeed":60,"backSpeed":40,"startDelay":300,"backDelay":1000,"loop":true}))
+  },
+  run: subtitleType => {
+    if (true) {
+      if (typeof Typed === 'function') {
+        subtitleType()
+      } else {
+        btf.getScript('https://cdn.jsdelivr.net/npm/typed.js@2.1.0/dist/typed.umd.min.js').then(subtitleType)
+      }
+    } else {
+      subtitleType()
+    }
+  },
+  processSubtitle: (content, extraContents = []) => {
+    if (true) {
+      const sub = ["[BIOS] Power-On Self Test...","[BIOS] Reading Boot Sector at 0x7c00...","[MBR] Master Boot Record Loaded. Executing Bootloader...","[BOOTMGR] Loading Boot Configuration Data...","[CPU] Switching from Real Mode to Protected Mode...","[LOADER] Loading Kernel...","[KERNEL] Initializing Memory Management...","[KERNEL] Loading Device Drivers...","[KERNEL] Switching to Long Mode...","[KERNEL] Starting Session Manager...","[USER] Entering User Mode...","C:\\Users\\nv3ifu> echo 'System Ready. Welcome!'"].slice()
+
+      if (extraContents.length > 0) {
+        sub.unshift(...extraContents)
+      }
+
+      if (typeof content === 'string') {
+        sub.unshift(content)
+      } else if (Array.isArray(content)) {
+        sub.unshift(...content)
+      }
+
+      sub.length > 0 && typedJSFn.init(sub)
+    } else {
+      document.getElementById('subtitle').textContent = typeof content === 'string' ? content :
+        (Array.isArray(content) && content.length > 0 ? content[0] : '')
+    }
+  }
+}
+btf.addGlobalFn('pjaxSendOnce', () => { typed.destroy() }, 'typedDestroy')
+</script><script>function subtitleType () {
+  typedJSFn.processSubtitle(["[BIOS] Power-On Self Test...","[BIOS] Reading Boot Sector at 0x7c00...","[MBR] Master Boot Record Loaded. Executing Bootloader...","[BOOTMGR] Loading Boot Configuration Data...","[CPU] Switching from Real Mode to Protected Mode...","[LOADER] Loading Kernel...","[KERNEL] Initializing Memory Management...","[KERNEL] Loading Device Drivers...","[KERNEL] Switching to Long Mode...","[KERNEL] Starting Session Manager...","[USER] Entering User Mode...","C:\\Users\\nv3ifu> echo 'System Ready. Welcome!'"])
+}
+typedJSFn.run(subtitleType)</script></div><script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('page-header');
+    if (header && header.classList.contains('full_page')) {
+      const video = document.createElement('video');
+      video.className = 'video-background';
+      video.autoplay = true;
+      video.loop = true;
+      video.muted = true;
+      video.playsInline = true;
+      video.src = '/video/win11.mp4';
+      header.insertBefore(video, header.firstChild);
+    }
+  });
+</script>
+<script async data-pjax src="//busuanzi.ibruce.info/busuanzi/2.3/busuanzi.pure.mini.js"></script></div></body></html>
